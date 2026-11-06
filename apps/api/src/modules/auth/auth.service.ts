@@ -12,7 +12,7 @@ import {
   type UserRecord,
   type UserRepository,
 } from '../users/user-repository.js';
-import { ApiError, validationError } from './api-error.js';
+import { ApiError, validationError } from '../../shared/api-error.js';
 import { LoginRateLimiter } from './login-rate-limiter.js';
 import {
   DEFAULT_SCRYPT_PARAMS,

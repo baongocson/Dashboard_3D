@@ -63,14 +63,15 @@ Giới hạn đăng nhập sai: 5 lần/15 phút theo (IP + username chuẩn ho�
 ```ts
 // Route cần đăng nhập: kiểm tra cookie + CSRF cho mutation, gắn request.auth.
 app.get('/projects', { preHandler: app.requireAuth }, async (request) => {
-  const ownerId = requireUserId(request); // từ modules/auth/auth.module.ts
+  const ownerId = requireUserId(request); // requireUserId, requireOwned: modules/auth/auth.module.ts
   return projects.listByOwner(ownerId); // luôn lọc theo ownerId trong query
 });
 ```
 
 - `request.auth` = `{ userId, sessionId, user }`. `projectSchema.ownerId` = `user.id`.
-- Tài nguyên của người khác trả 404 `NOT_FOUND`, không 403, để không lộ sự tồn tại.
-- Lỗi từ repository: ném `ApiError` hoặc `DatabaseUnavailableError` (trong `modules/auth/api-error.ts`), error handler chung chuyển sang định dạng ở mục 3.
+- Tài nguyên của người khác trả 404 `NOT_FOUND`, không 403, để không lộ sự tồn tại. Ưu tiên lọc theo owner ngay trong query (`{ _id, ownerId }`). Khi đã đọc theo ID, dùng `requireOwned(request, record)`: record thiếu hoặc của người khác đều thành 404.
+- `ownerId` luôn lấy từ `requireUserId(request)`, không bao giờ lấy từ body. Mẫu đầy đủ (list/create/get/patch/delete): `apps/api/src/modules/auth/ownership.test.ts`.
+- Lỗi dùng chung nằm ở `apps/api/src/shared/`: `ApiError`, `DatabaseUnavailableError` (`api-error.ts`) và `guardMongo` (`mongo-errors.ts`). Bọc mỗi lệnh driver bằng `guardMongo(() => …, onDuplicateKey?)`: mất kết nối → 503, trùng unique index → lỗi do module tự định nghĩa, lỗi khác → 500 (không che bug thành 503).
 - Request sync chạy nền gửi `x-session-activity: background` để không gia hạn phiên.
 
 ## 5. Lưu trữ MongoDB (phối hợp Trâm)

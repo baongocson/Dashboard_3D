@@ -2,7 +2,7 @@ import { timingSafeEqual } from 'node:crypto';
 import fastifyCookie from '@fastify/cookie';
 import { CSRF_HEADER, SESSION_ACTIVITY_HEADER, type PublicUser } from '@dashboard/contracts';
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
-import { ApiError } from './api-error.js';
+import { ApiError } from '../../shared/api-error.js';
 import type { AuthService } from './auth.service.js';
 
 export const SESSION_COOKIE = 'dashboard_session';
@@ -33,6 +33,21 @@ declare module 'fastify' {
 export function requireUserId(request: FastifyRequest): string {
   if (!request.auth) throw new ApiError('AUTH_REQUIRED', 'Login required');
   return request.auth.userId;
+}
+
+/**
+ * Returns the resource only if the signed-in user owns it. Missing and foreign resources both
+ * answer 404 NOT_FOUND so a user cannot probe which IDs exist. Prefer filtering by owner in the
+ * query itself (`{ _id, ownerId }`); use this when a record was loaded by ID alone.
+ */
+export function requireOwned<T extends { ownerId: string }>(
+  request: FastifyRequest,
+  resource: T | null | undefined,
+): T {
+  const userId = requireUserId(request);
+  if (!resource || resource.ownerId !== userId)
+    throw new ApiError('NOT_FOUND', 'Resource not found');
+  return resource;
 }
 
 function safeEqual(a: string, b: string): boolean {

@@ -1,5 +1,5 @@
 import type { Collection, Db } from 'mongodb';
-import { DatabaseUnavailableError } from './api-error.js';
+import { guardMongo } from '../../shared/mongo-errors.js';
 
 /**
  * Login session (phiên đăng nhập) — not the data-processing work session in modules/sessions.
@@ -53,13 +53,7 @@ interface AuthSessionDocument extends Omit<AuthSessionRecord, 'id'> {
   _id: string;
 }
 
-async function guard<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: unknown) {
-    throw new DatabaseUnavailableError(error);
-  }
-}
+const guard = guardMongo;
 
 export class MongoAuthSessionRepository implements AuthSessionRepository {
   private readonly sessions: Collection<AuthSessionDocument>;

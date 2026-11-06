@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { MongoServerError, type Collection, type Db } from 'mongodb';
-import { DatabaseUnavailableError } from '../auth/api-error.js';
+import type { Collection, Db } from 'mongodb';
+import { guardMongo } from '../../shared/mongo-errors.js';
 import {
   UsernameTakenError,
   type NewUser,
@@ -14,22 +14,13 @@ interface UserDocument extends Omit<UserRecord, 'id'> {
   _id: string;
 }
 
-const DUPLICATE_KEY = 11000;
-
 function fromDocument({ _id, ...rest }: UserDocument): UserRecord {
   return { id: _id, ...rest };
 }
 
-/** Wrap driver errors: duplicates become UsernameTakenError, other failures DatabaseUnavailableError. */
-async function guard<T>(operation: () => Promise<T>): Promise<T> {
-  try {
-    return await operation();
-  } catch (error: unknown) {
-    if (error instanceof MongoServerError && error.code === DUPLICATE_KEY)
-      throw new UsernameTakenError();
-    throw new DatabaseUnavailableError(error);
-  }
-}
+/** Unique-index violations on `users` can only come from usernameNormalized (or a UUID clash). */
+const guard = <T>(operation: () => Promise<T>) =>
+  guardMongo(operation, () => new UsernameTakenError());
 
 export class MongoUserRepository implements UserRepository {
   private readonly users: Collection<UserDocument>;

@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 import fastifyCors from '@fastify/cors';
 import { CSRF_HEADER, SESSION_ACTIVITY_HEADER } from '@dashboard/contracts';
 import Fastify from 'fastify';
-import { apiErrorHandler } from './modules/auth/api-error.js';
+import { apiErrorHandler } from './shared/api-error.js';
 import { registerAuthModule } from './modules/auth/auth.module.js';
 import { AuthService, type AuthServiceOptions } from './modules/auth/auth.service.js';
 import { unavailableAuthStores, type AuthStores } from './modules/auth/stores.js';

@@ -1,6 +1,6 @@
 import { updateProfileRequestSchema } from '@dashboard/contracts';
 import type { FastifyInstance } from 'fastify';
-import { ApiError, validationError } from '../auth/api-error.js';
+import { ApiError, validationError } from '../../shared/api-error.js';
 import { requireUserId } from '../auth/auth.module.js';
 import { toPublicUser, type UserRepository } from './user-repository.js';
 

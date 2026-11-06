@@ -12,29 +12,39 @@ const ORIGIN = 'http://localhost:4173';
 const PASSWORD = 'correct horse battery';
 
 describe.skipIf(!uri)('accounts on a real MongoDB (MONGODB_TEST_URI)', () => {
-  let client: MongoClient;
-  let db: Db;
-  let app: ReturnType<typeof createApp>;
+  // Atlas needs DNS SRV + TLS + auth round trips; keep the limit above the driver's own timeout
+  // so a blocked connection reports the driver error instead of a bare hook timeout.
+  const CONNECT_TIMEOUT_MS = 20_000;
+  const client = new MongoClient(uri ?? 'mongodb://unused', {
+    serverSelectionTimeoutMS: CONNECT_TIMEOUT_MS,
+  });
+  const db: Db = client.db(`dashboard3d_auth_test_${randomUUID().slice(0, 8)}`);
+  let app: ReturnType<typeof createApp> | undefined;
+  let connected = false;
 
   beforeAll(async () => {
-    client = new MongoClient(uri ?? '');
     await client.connect();
-    db = client.db(`dashboard3d_auth_test_${randomUUID().slice(0, 8)}`);
+    connected = true;
     app = createApp({
       logger: false,
       authStores: await createMongoAuthStores(db),
       sessionSecret: 'integration-secret-integration-secret',
       auth: { scryptParams: { N: 2 ** 10, r: 8, p: 1 } },
     });
-  });
+  }, CONNECT_TIMEOUT_MS + 10_000);
   afterAll(async () => {
-    await app.close();
-    await db.dropDatabase();
+    await app?.close();
+    if (connected) await db.dropDatabase();
     await client.close();
-  });
+  }, CONNECT_TIMEOUT_MS);
+
+  function api() {
+    if (!app) throw new Error('MongoDB connection failed in beforeAll');
+    return app;
+  }
 
   const post = (url: string, payload: object, cookie?: string) =>
-    app.inject({
+    api().inject({
       method: 'POST',
       url,
       payload,
@@ -73,7 +83,7 @@ describe.skipIf(!uri)('accounts on a real MongoDB (MONGODB_TEST_URI)', () => {
     expect(JSON.stringify(session)).not.toContain(token); // only an HMAC of the token is stored
 
     expect((await post('/auth/logout', {}, cookie)).statusCode).toBe(204);
-    const after = await app.inject({ method: 'GET', url: '/auth/session', headers: { cookie } });
+    const after = await api().inject({ method: 'GET', url: '/auth/session', headers: { cookie } });
     expect(after.statusCode).toBe(401);
   });
 });

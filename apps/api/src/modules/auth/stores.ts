@@ -1,7 +1,7 @@
 import type { Db } from 'mongodb';
 import { MongoUserRepository } from '../users/mongo-user-repository.js';
 import type { UserRepository } from '../users/user-repository.js';
-import { DatabaseUnavailableError } from './api-error.js';
+import { DatabaseUnavailableError } from '../../shared/api-error.js';
 import { MongoAuthSessionRepository, type AuthSessionRepository } from './session-repository.js';
 
 export interface AuthStores {
