@@ -114,6 +114,7 @@ Không commit tệp credential hoặc env thật, không đưa `MONGODB_URI`, m�
 - [Kiến trúc và cách chạy — nhiệm vụ 02](docs/architecture/foundation.md).
 - [Bản đề xuất nguồn](docs/requirements/proposed-rules-source.md).
 - [Kết quả kiểm chứng 01–02](docs/testing/task-01-02-results.md).
+- [Phân công chính — thành viên, thư mục và nhánh Git](docs/teamwork/phan-cong-thanh-vien.md).
 
 Bước tiếp theo: **03 — lưu local nhất quán và khôi phục sau lỗi**, rồi 04 CSV Worker → 05 Collection/Next → 06 Missing 3D → 07 preview → 08 Apply/tự lưu → 09 lưu/thoát/mở phiên → 10 hoàn tác và E2E. Sau đó mở rộng phương pháp 11–15, tài khoản 16, Atlas 17, đồng bộ 18, offline/đăng xuất 19 và nghiệm thu 20.
 

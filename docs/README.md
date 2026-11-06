@@ -5,5 +5,6 @@
 - [Nền tảng và cách chạy — nhiệm vụ 02](architecture/foundation.md)
 - [Bản đề xuất nguyên văn](requirements/proposed-rules-source.md)
 - [Kết quả kiểm chứng](testing/task-01-02-results.md)
+- [Phân công chính — thành viên, thư mục và nhánh Git](teamwork/phan-cong-thanh-vien.md)
 
 Luồng ưu tiên: CSV → Collection → Next → Missing 3D → chọn điểm/ô → preview → Áp dụng → tự lưu → Thoát/Mở phiên. Nền tảng hiện chưa triển khai luồng này; tiếp tục nhiệm vụ 03 theo kế hoạch.
