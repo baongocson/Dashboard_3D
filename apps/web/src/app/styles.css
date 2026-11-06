@@ -1,0 +1,138 @@
+:root {
+  font-family: Inter, 'Segoe UI', sans-serif;
+  color: #17342f;
+  background: #f5f7f4;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+.topbar {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6%;
+  border-bottom: 1px solid #dde5dd;
+  background: #fff;
+}
+.brand {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 19px;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  background: #1f6655;
+  color: white;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-right: 6px;
+}
+.stage {
+  color: #527267;
+  background: #edf3ed;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+}
+main {
+  width: min(860px, 88%);
+  margin: 72px auto 40px;
+  flex: 1;
+}
+.eyebrow {
+  color: #4d776b;
+  letter-spacing: 0.16em;
+  font-size: 11px;
+  font-weight: 700;
+}
+h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  letter-spacing: -0.035em;
+  margin: 16px 0;
+  line-height: 1.15;
+}
+.intro {
+  color: #62736b;
+  font-size: 16px;
+  line-height: 1.7;
+  max-width: 600px;
+}
+.empty-state {
+  background: #fff;
+  border: 1px solid #dde5dd;
+  border-radius: 20px;
+  padding: 52px 24px;
+  text-align: center;
+  margin-top: 36px;
+}
+.file-mark {
+  width: 60px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 24px;
+  border: 1px solid #b9d1c4;
+  border-radius: 10px;
+  color: #387460;
+  background: #f2f8f2;
+  font-weight: 700;
+  font-size: 13px;
+}
+h2 {
+  font-size: 22px;
+  margin: 0 0 12px;
+}
+.empty-state p {
+  color: #65776e;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.empty-state .limit {
+  font-size: 12px;
+  margin-top: 28px;
+}
+.scope-note {
+  color: #66766c;
+  font-size: 12px;
+  line-height: 1.6;
+}
+footer {
+  color: #6c8074;
+  font-size: 12px;
+  border-top: 1px solid #dde5dd;
+  padding: 22px 6%;
+}
+footer span {
+  margin: 0 12px;
+}
+@media (max-width: 560px) {
+  main {
+    margin-top: 44px;
+  }
+  .topbar {
+    height: 68px;
+  }
+  .brand {
+    font-size: 16px;
+  }
+  .empty-state {
+    padding: 36px 20px;
+  }
+}

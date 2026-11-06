@@ -1,0 +1,8 @@
+package-lock.json
+node_modules
+dist
+docs/prompt
+docs/requirements/proposed-rules-source.md
+atlas-credentials.env
+test-results
+playwright-report

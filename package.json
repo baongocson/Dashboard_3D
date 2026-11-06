@@ -1,0 +1,38 @@
+{
+  "name": "dashboard-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=24.0.0 <25",
+    "npm": ">=11 <12"
+  },
+  "scripts": {
+    "dev": "node node_modules/concurrently/dist/bin/index.js --kill-others -n web,api \"npm run dev -w @dashboard/web\" \"npm run dev -w @dashboard/api\"",
+    "build": "npm run build -w @dashboard/web && npm run build -w @dashboard/api",
+    "start": "node node_modules/concurrently/dist/bin/index.js --kill-others -n web,api \"npm run start -w @dashboard/web\" \"npm run start -w @dashboard/api\"",
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit -p packages/contracts && node node_modules/typescript/bin/tsc --noEmit -p packages/data-engine && node node_modules/typescript/bin/tsc --noEmit -p apps/web && node node_modules/typescript/bin/tsc --noEmit -p apps/api && node node_modules/typescript/bin/tsc --noEmit -p tsconfig.tools.json",
+    "lint": "node node_modules/eslint/bin/eslint.js .",
+    "format:check": "node node_modules/prettier/bin/prettier.cjs --check .",
+    "format": "node node_modules/prettier/bin/prettier.cjs --write .",
+    "test": "node node_modules/vitest/vitest.mjs run",
+    "test:e2e": "node node_modules/@playwright/test/cli.js test",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/node": "^24.0.0",
+    "concurrently": "10.0.6",
+    "eslint": "10.14.0",
+    "prettier": "^3.6.0",
+    "tsx": "4.23.15",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.72.1",
+    "vitest": "5.1.0"
+  }
+}
