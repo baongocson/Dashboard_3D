@@ -276,3 +276,97 @@ export const workerResponseSchema = z.discriminatedUnion('type', [
   }),
   z.strictObject({ type: z.literal('error'), jobId: idSchema.nullable(), message: z.string() }),
 ]);
+
+// ---------------------------------------------------------------------------
+// Accounts (task 16 draft, owner: Phúc). Rules follow task-01-decisions §Tài khoản;
+// see docs/architecture/auth-contract.md for the endpoint list and error matrix.
+// ---------------------------------------------------------------------------
+export const USERNAME_MIN_LENGTH = 3;
+export const USERNAME_MAX_LENGTH = 30;
+/** Password length is counted in Unicode code points, not UTF-16 units. */
+export const PASSWORD_MIN_CODE_POINTS = 15;
+export const PASSWORD_MAX_CODE_POINTS = 128;
+export const DISPLAY_NAME_MAX_LENGTH = 50;
+export const CSRF_HEADER = 'x-csrf-token';
+/** Background requests (e.g. sync) send `x-session-activity: background` so they do not extend idle time. */
+export const SESSION_ACTIVITY_HEADER = 'x-session-activity';
+
+const usernamePattern = /^[A-Za-z0-9_.-]+$/;
+export function countCodePoints(value: string): number {
+  return Array.from(value).length;
+}
+/** Canonical form used for uniqueness: trimmed, ASCII case-folded. */
+export function normalizeUsername(username: string): string {
+  return username.trim().toLowerCase();
+}
+export const usernameSchema = z
+  .string()
+  .trim()
+  .min(USERNAME_MIN_LENGTH)
+  .max(USERNAME_MAX_LENGTH)
+  .regex(usernamePattern, 'Username may only contain A-Z, a-z, 0-9, "_", "-" and "."');
+// Never trimmed, case-folded or normalized.
+export const passwordSchema = z
+  .string()
+  .refine((value) => countCodePoints(value) >= PASSWORD_MIN_CODE_POINTS, {
+    message: `Password must have at least ${String(PASSWORD_MIN_CODE_POINTS)} characters`,
+  })
+  .refine((value) => countCodePoints(value) <= PASSWORD_MAX_CODE_POINTS, {
+    message: `Password must have at most ${String(PASSWORD_MAX_CODE_POINTS)} characters`,
+  });
+export const displayNameSchema = z.string().trim().min(1).max(DISPLAY_NAME_MAX_LENGTH);
+
+export const registerRequestSchema = z.strictObject({
+  username: usernameSchema,
+  password: passwordSchema,
+});
+export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+// Login does not re-apply registration rules (a wrong format is just wrong credentials),
+// but bounds input size so hashing cannot be abused.
+export const loginRequestSchema = z.strictObject({
+  username: z.string().max(200),
+  password: z.string().max(4 * PASSWORD_MAX_CODE_POINTS),
+});
+export type LoginRequest = z.infer<typeof loginRequestSchema>;
+export const updateProfileRequestSchema = z.strictObject({ displayName: displayNameSchema });
+export type UpdateProfileRequest = z.infer<typeof updateProfileRequestSchema>;
+
+export const publicUserSchema = z.strictObject({
+  id: idSchema,
+  username: z.string(),
+  displayName: z.string(),
+});
+export type PublicUser = z.infer<typeof publicUserSchema>;
+export const registerResponseSchema = z.strictObject({ user: publicUserSchema });
+export const authSessionResponseSchema = z.strictObject({
+  user: publicUserSchema,
+  csrfToken: z.string().min(1),
+  idleExpiresAt: z.iso.datetime(),
+  absoluteExpiresAt: z.iso.datetime(),
+});
+export type AuthSessionResponse = z.infer<typeof authSessionResponseSchema>;
+export const userResponseSchema = z.strictObject({ user: publicUserSchema });
+
+export const apiErrorCodeSchema = z.enum([
+  'VALIDATION_ERROR',
+  'INVALID_CREDENTIALS',
+  'AUTH_REQUIRED',
+  'SESSION_EXPIRED',
+  'ORIGIN_REJECTED',
+  'CSRF_INVALID',
+  'NOT_FOUND',
+  'USERNAME_TAKEN',
+  'TOO_MANY_ATTEMPTS',
+  'DATABASE_UNAVAILABLE',
+  'INTERNAL_ERROR',
+]);
+export type ApiErrorCode = z.infer<typeof apiErrorCodeSchema>;
+export const apiErrorResponseSchema = z.strictObject({
+  error: z.strictObject({
+    code: apiErrorCodeSchema,
+    message: z.string(),
+    issues: z.array(z.strictObject({ path: z.string(), message: z.string() })).optional(),
+    retryAfterSeconds: z.number().int().positive().optional(),
+  }),
+});
+export type ApiErrorResponse = z.infer<typeof apiErrorResponseSchema>;
