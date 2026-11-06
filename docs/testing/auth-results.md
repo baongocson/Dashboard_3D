@@ -1,24 +1,24 @@
 # Kiểm chứng tài khoản — nhánh `codex/phuc-backend-auth`
 
-Ngày kiểm tra: 06/11/2026, Asia/Saigon. Chỉ áp dụng cho `modules/auth`, `modules/users` và phần auth trong contracts.
+Ngày kiểm tra: 06–07/11/2026, Asia/Saigon. Chỉ áp dụng cho `modules/auth`, `modules/users` và phần auth trong contracts.
 
 ## Môi trường
 
-- Windows 11 Pro, Node.js 24.22.2 (bản portable; Node cài sẵn trên máy là 20.12, không chạy được Vitest/rolldown), npm 11.19.1.
+- Windows 11 Pro, Node.js 24.22.2 cài hệ thống (`C:\Program Files\nodejs`), npm 11.19.1. Dependency cài lại bằng `npm ci` trên bản này; các dòng ghi (07/11) bên dưới đã chạy lại trên bản này. (Lần đầu 06/11 dùng bản portable cùng phiên bản vì máy khi đó chỉ có Node 20.12, không chạy được Vitest/rolldown.)
 - MongoDB 7.0.45 local trong container Docker dùng một lần (`mongo:7`). Docker chỉ dùng để kiểm chứng, không phải dependency của dự án.
 - Dependency mới của API (ghim chính xác): `@fastify/cookie` 11.1.5 (MIT), `@fastify/cors` 11.4.1 (MIT), `mongodb` 7.8.0 (Apache-2.0).
 
 ## Expected / actual
 
-| Kiểm tra                                                    | Expected                                                                      | Actual                                                       |
-| ----------------------------------------------------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| `npm run check`                                             | typecheck, lint, tests, build đạt                                             | Đạt; 61 tests đạt, 3 tests Mongo skip (07/11)                |
-| `npm run test:e2e`                                          | Smoke nền tảng không bị ảnh hưởng                                             | 2/2 đạt, Chrome                                              |
-| `MONGODB_TEST_URI=… vitest run …/mongo.integration.test.ts` | Unique index, 3 đăng ký trùng đồng thời → 1×201 + 2×409, chỉ lưu hash/HMAC    | 3/3 đạt trên MongoDB 7 local; 3/3 đạt trên **Atlas** (07/11) |
-| Production `node apps/api/dist/server.js` không có MongoDB  | register/login 503 `DATABASE_UNAVAILABLE`, không cookie                       | Đạt                                                          |
-| Production với `MONGODB_URI` (curl)                         | 201 → 409 trùng → login 200 → thiếu CSRF 403 → có CSRF 200 → logout 204 → 401 | Đạt; DB chỉ có `scrypt$v1$…`                                 |
-| Log server có chứa mật khẩu                                 | Không                                                                         | Không tìm thấy                                               |
-| Mutation test: tắt kiểm tra CSRF                            | Test phải fail                                                                | Fail đúng 1 test, đã khôi phục mã                            |
+| Kiểm tra                                                    | Expected                                                                      | Actual                                                                             |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `npm run check`                                             | typecheck, lint, tests, build đạt                                             | Đạt; 61 tests đạt, 3 tests Mongo skip (07/11)                                      |
+| `npm run test:e2e`                                          | Smoke nền tảng không bị ảnh hưởng                                             | 2/2 đạt, Chrome (07/11)                                                            |
+| `MONGODB_TEST_URI=… vitest run …/mongo.integration.test.ts` | Unique index, 3 đăng ký trùng đồng thời → 1×201 + 2×409, chỉ lưu hash/HMAC    | 3/3 đạt trên MongoDB 7 local; 3/3 đạt trên **Atlas** (07/11), không để lại bản ghi |
+| Production `node apps/api/dist/server.js` không có MongoDB  | register/login 503 `DATABASE_UNAVAILABLE`, không cookie                       | Đạt (06/11)                                                                        |
+| Production với `MONGODB_URI` (curl)                         | 201 → 409 trùng → login 200 → thiếu CSRF 403 → có CSRF 200 → logout 204 → 401 | Đạt (06/11, MongoDB local); DB chỉ có `scrypt$v1$…`                                |
+| Log server có chứa mật khẩu                                 | Không                                                                         | Không tìm thấy                                                                     |
+| Mutation test: tắt kiểm tra CSRF                            | Test phải fail                                                                | Fail đúng 1 test, đã khôi phục mã                                                  |
 
 Các ca trong `apps/api/src/modules/auth/auth.test.ts` (dùng repository bộ nhớ có nhãn TEST DOUBLE): đầu vào thiếu/sai, biên độ dài, mật khẩu Unicode/khoảng trắng giữ nguyên, trùng sau chuẩn hoá, hai đăng ký đồng thời, sai mật khẩu và sai username trả cùng lỗi, thuộc tính cookie, chưa đăng nhập, cookie giả, hết idle 24 h, request nền không gia hạn, hết hạn tuyệt đối 7 ngày, logout thu hồi phía server và idempotent, đăng nhập mới thu hồi phiên cũ, Origin/CORS, CSRF (thiếu, sai, token của tài khoản khác), tách dữ liệu hai tài khoản, rate limit và mở lại sau cửa sổ.
 
