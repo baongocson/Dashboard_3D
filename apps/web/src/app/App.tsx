@@ -1,3 +1,4 @@
+import { ChunkTestButton } from '../components/TestButton';
 export function App() {
   return (
     <div className="app">
@@ -11,6 +12,7 @@ export function App() {
         <span className="stage">Collection</span>
       </header>
       <main>
+        <ChunkTestButton />
         <p className="eyebrow">KHÁM PHÁ CHẤT LƯỢNG DỮ LIỆU</p>
         <h1>Bắt đầu từ dữ liệu của bạn.</h1>
         <p className="intro">

@@ -178,7 +178,7 @@ export const outboxSchema = z.strictObject({
   kind: z.enum(['import', 'apply', 'undo', 'save-session']),
   baseRevision: z.number().int().nonnegative().nullable(),
   dependsOn: z.array(idSchema),
-  status: z.enum(['pending', 'uploading', 'conflict', 'auth-required', 'retryable-error']),
+  status: z.enum(['pending', 'uploading', 'conflict','synced', 'auth-required', 'retryable-error']),
 });
 export const applyPublicationSchema = z
   .strictObject({
