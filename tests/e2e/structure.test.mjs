@@ -1,0 +1,10 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, existsSync } from 'node:fs';
+const root = new URL('../', import.meta.url);
+const load = p => readFileSync(new URL(p, root), 'utf8');
+test('project has runnable Vite scripts', () => { const p = JSON.parse(load('package.json')); assert.ok(p.scripts.dev); assert.ok(p.scripts.build); });
+test('scene has rotation, zoom and data selection', () => { const s = load('src/Scene3D.tsx'); assert.match(s, /OrbitControls/); assert.match(s, /onClick/); assert.match(s, /ScatterPoint/); assert.match(s, /Bar/); });
+test('table and 3D scene share selected row state', () => { const s = load('src/App.tsx'); assert.match(s, /selectedId=\{selectedId\}/); assert.match(s, /onSelectRow=\{choose\}/); assert.match(s, /active-row/); });
+test('legacy labels removed', () => {const s = load('src/Scene3D.tsx'); assert.doesNotMatch(s, /DATA TRENDS|nga-scene-axis/); });
+test('CSV importer exists', () => {assert.match(load('src/data.ts'), /export function parseCsv/); assert.ok(existsSync(new URL('src/main.tsx', root)));});
