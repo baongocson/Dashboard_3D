@@ -1,0 +1,33 @@
+
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Engine Worker Test</title>
+  </head>
+  <body>
+    <h1>Data Engine Worker Test</h1>
+
+    <button id="run-summary" type="button">
+      Test Dataset Summary
+    </button>
+
+    <button id="run-test" type="button">
+      Test Progress
+    </button>
+
+    <button id="cancel-test" type="button" disabled>
+      Cancel
+    </button>
+
+    <h2>Tiến độ</h2>
+    <progress id="worker-progress" value="0" max="100"></progress>
+    <p id="progress-text">0%</p>
+
+    <h2>Kết quả</h2>
+    <pre id="result">Chưa chạy kiểm tra</pre>
+
+    <script type="module" src="/src/workers/workerTest.ts"></script>
+  </body>
+</html>
