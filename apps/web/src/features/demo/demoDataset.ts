@@ -12,11 +12,26 @@ export const demoDataset: Dataset = datasetSchema.parse({
     { id: 'col-area', name: 'Khu vực', type: 'text' },
   ],
   rows: [
-    { id: 'row-001', cells: { 'col-name': 'An', 'col-age': 20, 'col-score': 8, 'col-area': 'TP.HCM' } },
-    { id: 'row-002', cells: { 'col-name': 'Bình', 'col-age': 22, 'col-score': 7, 'col-area': 'Cà Mau' } },
-    { id: 'row-003', cells: { 'col-name': 'Chi', 'col-age': null, 'col-score': 9, 'col-area': 'TP.HCM' } },
-    { id: 'row-004', cells: { 'col-name': 'Dũng', 'col-age': 24, 'col-score': null, 'col-area': 'Đà Nẵng' } },
-    { id: 'row-005', cells: { 'col-name': 'An', 'col-age': 20, 'col-score': 8, 'col-area': 'TP.HCM' } },
+    {
+      id: 'row-001',
+      cells: { 'col-name': 'An', 'col-age': 20, 'col-score': 8, 'col-area': 'TP.HCM' },
+    },
+    {
+      id: 'row-002',
+      cells: { 'col-name': 'Bình', 'col-age': 22, 'col-score': 7, 'col-area': 'Cà Mau' },
+    },
+    {
+      id: 'row-003',
+      cells: { 'col-name': 'Chi', 'col-age': null, 'col-score': 9, 'col-area': 'TP.HCM' },
+    },
+    {
+      id: 'row-004',
+      cells: { 'col-name': 'Dũng', 'col-age': 24, 'col-score': null, 'col-area': 'Đà Nẵng' },
+    },
+    {
+      id: 'row-005',
+      cells: { 'col-name': 'An', 'col-age': 20, 'col-score': 8, 'col-area': 'TP.HCM' },
+    },
   ],
 });
 
@@ -26,5 +41,6 @@ export const demoCollectionStatistics: CollectionStatistics = {
   duplicateExcessRows: 1,
   outlierCells: null,
   outlierRows: null,
-  methodNote: 'Thống kê mẫu tĩnh: 2 ô thiếu, 2 dòng có thiếu, 1 dòng trùng dư. IQR và tương quan chưa chạy.',
+  methodNote:
+    'Thống kê mẫu tĩnh: 2 ô thiếu, 2 dòng có thiếu, 1 dòng trùng dư. IQR và tương quan chưa chạy.',
 };

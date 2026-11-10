@@ -8,27 +8,27 @@ Chi tiết kỹ thuật: [auth-contract.md](../architecture/auth-contract.md). K
 
 ## 1. Đã thực hiện (theo 6 bước trong phân công)
 
-| #   | Nhiệm vụ                                                            | Trạng thái                | Ghi chú                                                                                                         |
-| --- | ------------------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| 1   | Schema tài khoản, request/response trong contracts                  | Đã soạn, **chưa chốt**    | Phần _Accounts_ trong `packages/contracts/src/index.ts`; còn 5 điểm mở (mục 4)                                  |
-| 2   | Unique index username chuẩn hoá, chống đăng ký trùng đồng thời      | Xong                      | `users_usernameNormalized_unique`; 3 đăng ký trùng đồng thời → 1×201 + 2×409                                    |
-| 3   | Băm mật khẩu, không lưu/log mật khẩu thô, không trả hash            | Xong                      | `scrypt` (N=2^17, r=8, p=1); log không chứa mật khẩu; response không có `passwordHash`                          |
-| 4   | Đăng ký chỉ username/password, đăng nhập đúng mới tạo phiên         | Xong                      | Register 201 không set cookie → UI chuyển về đăng nhập; login 200 + cookie                                      |
-| 5   | Cookie/session, CSRF/Origin/CORS, giới hạn đăng nhập, giao diện cho Tuấn | Xong                 | Phiên server-side (idle 24 h, tuyệt đối 7 ngày); rate limit 5/15 phút theo IP+username; `requireAuth`, `requireUserId`, `requireOwned` |
-| 6   | Kiểm thử sai mật khẩu, chưa đăng nhập, hết phiên, hai tài khoản, logout | Xong phía server      | Logout gắn với sync/xoá local thuộc phía client, chưa làm                                                       |
+| #   | Nhiệm vụ                                                                 | Trạng thái             | Ghi chú                                                                                                                                |
+| --- | ------------------------------------------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Schema tài khoản, request/response trong contracts                       | Đã soạn, **chưa chốt** | Phần _Accounts_ trong `packages/contracts/src/index.ts`; còn 5 điểm mở (mục 4)                                                         |
+| 2   | Unique index username chuẩn hoá, chống đăng ký trùng đồng thời           | Xong                   | `users_usernameNormalized_unique`; 3 đăng ký trùng đồng thời → 1×201 + 2×409                                                           |
+| 3   | Băm mật khẩu, không lưu/log mật khẩu thô, không trả hash                 | Xong                   | `scrypt` (N=2^17, r=8, p=1); log không chứa mật khẩu; response không có `passwordHash`                                                 |
+| 4   | Đăng ký chỉ username/password, đăng nhập đúng mới tạo phiên              | Xong                   | Register 201 không set cookie → UI chuyển về đăng nhập; login 200 + cookie                                                             |
+| 5   | Cookie/session, CSRF/Origin/CORS, giới hạn đăng nhập, giao diện cho Tuấn | Xong                   | Phiên server-side (idle 24 h, tuyệt đối 7 ngày); rate limit 5/15 phút theo IP+username; `requireAuth`, `requireUserId`, `requireOwned` |
+| 6   | Kiểm thử sai mật khẩu, chưa đăng nhập, hết phiên, hai tài khoản, logout  | Xong phía server       | Logout gắn với sync/xoá local thuộc phía client, chưa làm                                                                              |
 
 Ngoài ra: lỗi dùng chung `ApiError`, `guardMongo` trong `apps/api/src/shared/` (mất kết nối → 503, lỗi khác → 500 không lộ chi tiết) để Tuấn dùng lại.
 
 ## 2. Kết quả kiểm tra
 
-| Hạng mục                                     | Kết quả                                                                 |
-| -------------------------------------------- | ----------------------------------------------------------------------- |
-| `npm run check` (typecheck, lint, test, build) | Đạt; 61 test đạt, 3 test MongoDB skip khi không có biến môi trường (chạy lại 08/11) |
-| `npm run test:e2e`                           | 2/2 đạt (07/11)                                                         |
-| Test tích hợp MongoDB local (MongoDB 7)      | 3/3 đạt                                                                 |
-| Test tích hợp **MongoDB Atlas** (`dashboard_dev`) | 3/3 đạt (07/11), dọn sạch bản ghi sau test                          |
-| Production `server.js` + curl                | Đạt với MongoDB local (06/11); không có MongoDB → 503 `DATABASE_UNAVAILABLE` |
-| Mutation test tắt kiểm tra CSRF              | Test fail đúng như mong đợi, đã khôi phục mã                            |
+| Hạng mục                                          | Kết quả                                                                             |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `npm run check` (typecheck, lint, test, build)    | Đạt; 61 test đạt, 3 test MongoDB skip khi không có biến môi trường (chạy lại 08/11) |
+| `npm run test:e2e`                                | 2/2 đạt (07/11)                                                                     |
+| Test tích hợp MongoDB local (MongoDB 7)           | 3/3 đạt                                                                             |
+| Test tích hợp **MongoDB Atlas** (`dashboard_dev`) | 3/3 đạt (07/11), dọn sạch bản ghi sau test                                          |
+| Production `server.js` + curl                     | Đạt với MongoDB local (06/11); không có MongoDB → 503 `DATABASE_UNAVAILABLE`        |
+| Mutation test tắt kiểm tra CSRF                   | Test fail đúng như mong đợi, đã khôi phục mã                                        |
 
 **Phạm vi xác nhận:** Các ca auth/ownership trong unit test dùng repository bộ nhớ có nhãn TEST DOUBLE; lưu trữ thật được xác nhận riêng bằng test tích hợp trên MongoDB local và Atlas.
 

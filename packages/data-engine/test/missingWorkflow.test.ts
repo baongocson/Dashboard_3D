@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
@@ -46,11 +45,7 @@ describe('missingWorkflow integration', () => {
   it('supports undo and redo after cleaning', () => {
     const history = startMissingWorkflow(dataset);
 
-    const cleaned = executeMissingWorkflow(
-      history,
-      [{ columnId: 'c2', strategy: 'mean' }],
-      'v2',
-    );
+    const cleaned = executeMissingWorkflow(history, [{ columnId: 'c2', strategy: 'mean' }], 'v2');
 
     const undone = undoMissingWorkflow(cleaned.history);
 
@@ -67,11 +62,7 @@ describe('missingWorkflow integration', () => {
     const original = structuredClone(dataset);
     const history = startMissingWorkflow(dataset);
 
-    executeMissingWorkflow(
-      history,
-      [{ columnId: 'c2', strategy: 'mean' }],
-      'v2',
-    );
+    executeMissingWorkflow(history, [{ columnId: 'c2', strategy: 'mean' }], 'v2');
 
     expect(dataset).toEqual(original);
   });
@@ -81,11 +72,7 @@ describe('missingWorkflow integration', () => {
     const originalHistory = structuredClone(history);
 
     expect(() =>
-      executeMissingWorkflow(
-        history,
-        [{ columnId: 'c1', strategy: 'mean' }],
-        'v2',
-      ),
+      executeMissingWorkflow(history, [{ columnId: 'c1', strategy: 'mean' }], 'v2'),
     ).toThrow();
 
     expect(history).toEqual(originalHistory);

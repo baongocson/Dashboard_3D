@@ -1,22 +1,15 @@
-
 import { describe, expect, it, vi } from 'vitest';
 
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  createWorkerRuntime,
-} from '../src/worker/processWorkerRuntimeRequest.js';
+import { createWorkerRuntime } from '../src/worker/processWorkerRuntimeRequest.js';
 
-import type {
-  WorkerRuntimeResponse,
-} from '../src/worker/workerMessages.js';
+import type { WorkerRuntimeResponse } from '../src/worker/workerMessages.js';
 
 describe('createWorkerRuntime', () => {
   const dataset: Dataset = {
     versionId: 'v1',
-    columns: [
-      { id: 'c1', name: 'Age', type: 'number' },
-    ],
+    columns: [{ id: 'c1', name: 'Age', type: 'number' }],
     rows: [
       { id: 'r1', cells: { c1: 10 } },
       { id: 'r2', cells: { c1: 20 } },
@@ -45,9 +38,7 @@ describe('createWorkerRuntime', () => {
       },
     );
 
-    const progress = responses.filter(
-      (response) => response.status === 'progress',
-    );
+    const progress = responses.filter((response) => response.status === 'progress');
 
     expect(progress).toHaveLength(3);
     expect(progress.map((item) => item.completed)).toEqual([2, 4, 5]);
@@ -106,13 +97,9 @@ describe('createWorkerRuntime', () => {
 
     await runningTask;
 
-    expect(responses.some(
-      (response) => response.status === 'cancelled',
-    )).toBe(true);
+    expect(responses.some((response) => response.status === 'cancelled')).toBe(true);
 
-    expect(responses.some(
-      (response) => response.status === 'success',
-    )).toBe(false);
+    expect(responses.some((response) => response.status === 'success')).toBe(false);
   });
 
   it('keeps existing dataset-summary requests working', async () => {

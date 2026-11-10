@@ -1,11 +1,7 @@
-
 import Dexie, { type Table } from 'dexie';
 import type { z } from 'zod';
 
-import {
-  projectSchema,
-  sessionSchema,
-} from '@dashboard/contracts';
+import { projectSchema, sessionSchema } from '@dashboard/contracts';
 
 import type {
   LocalDatasetRecord,
@@ -16,6 +12,7 @@ import type {
   LocalHistoryRecord,
   LocalOutboxRecord,
 } from './types';
+import type { ProjectSnapshot } from '@dashboard/contracts';
 
 export type Project = z.infer<typeof projectSchema>;
 export type Session = z.infer<typeof sessionSchema>;
@@ -31,6 +28,18 @@ class DashboardDatabase extends Dexie {
   charts!: Table<LocalChartRecord, string>;
   histories!: Table<LocalHistoryRecord, string>;
   outbox!: Table<LocalOutboxRecord, string>;
+  syncJobs!: Table<
+    {
+      projectId: string;
+      ownerId: string;
+      operationId: string;
+      baseRevision: number;
+      snapshot: ProjectSnapshot;
+      operationIds: string[];
+    },
+    string
+  >;
+  remoteRevisions!: Table<{ key: string; revision: number }, string>;
 
   constructor() {
     super('dashboard-3d-local');
@@ -42,23 +51,19 @@ class DashboardDatabase extends Dexie {
 
       datasets: '&id, projectId, name, updatedAt',
 
-      versions:
-        '&id, projectId, datasetId, manifestId, parentVersionId, source',
+      versions: '&id, projectId, datasetId, manifestId, parentVersionId, source',
 
       manifests: '&id',
 
-      chunks:
-        '&id, manifestId, ordinal, [manifestId+ordinal]',
+      chunks: '&id, manifestId, ordinal, [manifestId+ordinal]',
 
       charts: '&id, projectId, versionId, updatedAt',
 
-      histories:
-        '&operationId, kind, fromVersionId, toVersionId',
+      histories: '&operationId, kind, fromVersionId, toVersionId',
 
-      outbox:
-        '&operationId, projectId, kind, status',
+      outbox: '&operationId, projectId, kind, status',
     });
-
+    this.version(4).stores({ syncJobs: '&projectId,ownerId', remoteRevisions: '&key' });
   }
 }
 

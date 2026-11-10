@@ -1,4 +1,3 @@
-
 export type CsvDelimiter = ',' | ';' | '\t';
 
 export interface ParsedCsv {
@@ -16,14 +15,8 @@ export class CsvParseError extends Error {
   }
 }
 
-export function parseCsv(
-  input: string,
-  delimiter: CsvDelimiter,
-): ParsedCsv {
-
-  const content = input.startsWith('\uFEFF')
-    ? input.slice(1)
-    : input;
+export function parseCsv(input: string, delimiter: CsvDelimiter): ParsedCsv {
+  const content = input.startsWith('\uFEFF') ? input.slice(1) : input;
 
   const records: string[][] = [];
   const sourceLines: number[] = [];
@@ -36,6 +29,7 @@ export function parseCsv(
   let inQuotes = false;
   let afterQuote = false;
   let atFieldStart = true;
+  let recordPresent = false;
 
   function finishField(): void {
     record.push(field);
@@ -48,12 +42,13 @@ export function parseCsv(
     finishField();
 
     // Bỏ dòng hoàn toàn trống, nhưng giữ dòng ",".
-    if (!(record.length === 1 && record[0] === '')) {
+    if (recordPresent || !(record.length === 1 && record[0] === '')) {
       records.push(record);
       sourceLines.push(recordStartLine);
     }
 
     record = [];
+    recordPresent = false;
     recordStartLine = line;
   }
 
@@ -90,10 +85,7 @@ export function parseCsv(
 
     if (afterQuote) {
       if (char !== delimiter && char !== '\n' && char !== '\r') {
-        throw new CsvParseError(
-          'Unexpected character after closing quote',
-          line,
-        );
+        throw new CsvParseError('Unexpected character after closing quote', line);
       }
     }
 
@@ -114,16 +106,14 @@ export function parseCsv(
     }
 
     if (char === '"' && atFieldStart) {
+      recordPresent = true;
       inQuotes = true;
       atFieldStart = false;
       continue;
     }
 
     if (char === '"') {
-      throw new CsvParseError(
-        'Unexpected quote inside unquoted field',
-        line,
-      );
+      throw new CsvParseError('Unexpected quote inside unquoted field', line);
     }
 
     field += char;
@@ -134,11 +124,7 @@ export function parseCsv(
     throw new CsvParseError('Unclosed quoted field', line);
   }
 
-  if (
-    record.length > 0 ||
-    field.length > 0 ||
-    afterQuote
-  ) {
+  if (record.length > 0 || field.length > 0 || afterQuote) {
     finishRecord();
   }
 

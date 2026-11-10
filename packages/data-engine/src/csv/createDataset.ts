@@ -1,15 +1,7 @@
-
-import {
-  datasetSchema,
-  type Cell,
-  type Dataset,
-} from '@dashboard/contracts';
+import { datasetSchema, type Cell, type Dataset } from '@dashboard/contracts';
 
 import type { ParsedCsv } from './parseCsv.js';
-import {
-  inferColumnType,
-  type InferredColumnType,
-} from './inferColumnTypes.js';
+import { inferColumnType, type InferredColumnType } from './inferColumnTypes.js';
 
 export interface CreateDatasetOptions {
   header: 'first-row' | 'generated';
@@ -24,11 +16,14 @@ export class CsvDatasetError extends Error {
     this.name = 'CsvDatasetError';
   }
 }
+export class CsvHeaderError extends CsvDatasetError {
+  constructor(public readonly proposedHeaders: string[]) {
+    super('Tên cột rỗng hoặc trùng. Hãy kiểm tra và xác nhận tên đề xuất.');
+    this.name = 'CsvHeaderError';
+  }
+}
 
-function normalizeCell(
-  value: string,
-  additionalMissingTokens: readonly string[],
-): string | null {
+function normalizeCell(value: string, additionalMissingTokens: readonly string[]): string | null {
   if (value.trim() === '') return null;
 
   if (additionalMissingTokens.includes(value.trim())) {
@@ -38,10 +33,7 @@ function normalizeCell(
   return value;
 }
 
-function convertCell(
-  value: string | null,
-  type: InferredColumnType,
-): Cell {
+function convertCell(value: string | null, type: InferredColumnType): Cell {
   if (value === null) return null;
 
   if (type === 'number') {
@@ -55,10 +47,7 @@ function convertCell(
   return value;
 }
 
-export function createDataset(
-  parsed: ParsedCsv,
-  options: CreateDatasetOptions,
-): Dataset {
+export function createDataset(parsed: ParsedCsv, options: CreateDatasetOptions): Dataset {
   const { records, sourceLines } = parsed;
 
   const firstRecord = records[0];
@@ -72,29 +61,30 @@ export function createDataset(
   const rawHeaders =
     options.header === 'first-row'
       ? firstRecord
-      : Array.from(
-          { length: columnCount },
-          (_, index) => `Column ${String(index + 1)}`,
-        );
+      : Array.from({ length: columnCount }, (_, index) => `column_${String(index + 1)}`);
 
   const headers = options.confirmedHeaders ?? rawHeaders;
 
   if (headers.length !== columnCount) {
-    throw new CsvDatasetError(
-      'Header count does not match column count',
-    );
+    throw new CsvDatasetError('Header count does not match column count');
   }
 
-  const normalizedHeaders = headers.map((header) =>
-    header.trim(),
-  );
+  const normalizedHeaders = headers.map((header) => header.trim());
 
-  if (normalizedHeaders.some((header) => header.length === 0)) {
-    throw new CsvDatasetError('Empty column name');
-  }
-
-  if (new Set(normalizedHeaders).size !== columnCount) {
-    throw new CsvDatasetError('Duplicate column names');
+  if (
+    normalizedHeaders.some((header) => header.length === 0) ||
+    new Set(normalizedHeaders).size !== columnCount
+  ) {
+    const seen = new Set<string>();
+    const proposed = normalizedHeaders.map((name, index) => {
+      const base = name || `column_${String(index + 1)}`;
+      let candidate = base,
+        suffix = 2;
+      while (seen.has(candidate)) candidate = `${base}_${String(suffix++)}`;
+      seen.add(candidate);
+      return candidate;
+    });
+    throw new CsvHeaderError(proposed);
   }
 
   const dataStart = options.header === 'first-row' ? 1 : 0;
@@ -109,7 +99,7 @@ export function createDataset(
       const line = sourceLines[index + dataStart] ?? 0;
 
       throw new CsvDatasetError(
-        `Line ${String(line)}: expected ${String(columnCount)} columns, received ${String(record.length)}`,
+        `Record ${String(index + 1)} / Line ${String(line)}: expected ${String(columnCount)} columns, received ${String(record.length)}`,
       );
     }
   }
@@ -121,9 +111,7 @@ export function createDataset(
   );
 
   const columns = normalizedHeaders.map((name, index) => {
-    const values = normalizedRecords.map(
-      (record) => record[index] ?? null,
-    );
+    const values = normalizedRecords.map((record) => record[index] ?? null);
 
     return {
       id: `column-${String(index + 1)}`,
@@ -142,10 +130,7 @@ export function createDataset(
         throw new CsvDatasetError('Invalid CSV column');
       }
 
-      cells[column.id] = convertCell(
-        record[columnIndex] ?? null,
-        column.type,
-      );
+      cells[column.id] = convertCell(record[columnIndex] ?? null, column.type);
     }
 
     return {

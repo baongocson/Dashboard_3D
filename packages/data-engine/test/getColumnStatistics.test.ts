@@ -1,10 +1,7 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  getColumnStatistics,
-} from '../src/stats/getColumnStatistics.js';
+import { getColumnStatistics } from '../src/stats/getColumnStatistics.js';
 
 describe('getColumnStatistics', () => {
   const dataset: Dataset = {
@@ -52,17 +49,13 @@ describe('getColumnStatistics', () => {
   });
 
   it('throws an error for unknown columns', () => {
-    expect(() =>
-      getColumnStatistics(dataset, 'unknown'),
-    ).toThrow('Column not found: unknown');
+    expect(() => getColumnStatistics(dataset, 'unknown')).toThrow('Column not found: unknown');
   });
 
   it('handles numeric columns containing only null', () => {
     const emptyDataset: Dataset = {
       versionId: 'v2',
-      columns: [
-        { id: 'c1', name: 'Value', type: 'number' },
-      ],
+      columns: [{ id: 'c1', name: 'Value', type: 'number' }],
       rows: [
         { id: 'r1', cells: { c1: null } },
         { id: 'r2', cells: { c1: null } },
@@ -78,25 +71,22 @@ describe('getColumnStatistics', () => {
     expect(result.mean).toBeNull();
   });
 
-it('handles large numeric datasets without argument limits', () => {
-  const largeDataset: Dataset = {
-    versionId: 'large-v1',
-    columns: [
-      { id: 'c1', name: 'Value', type: 'number' },
-    ],
-    rows: Array.from({ length: 100_000 }, (_, index) => ({
-      id: `row-${String(index)}`,
-      cells: { c1: index + 1 },
-    })),
-  };
+  it('handles large numeric datasets without argument limits', () => {
+    const largeDataset: Dataset = {
+      versionId: 'large-v1',
+      columns: [{ id: 'c1', name: 'Value', type: 'number' }],
+      rows: Array.from({ length: 100_000 }, (_, index) => ({
+        id: `row-${String(index)}`,
+        cells: { c1: index + 1 },
+      })),
+    };
 
-  const result = getColumnStatistics(largeDataset, 'c1');
+    const result = getColumnStatistics(largeDataset, 'c1');
 
-  expect(result.totalCount).toBe(100_000);
-  expect(result.uniqueCount).toBe(100_000);
-  expect(result.min).toBe(1);
-  expect(result.max).toBe(100_000);
-  expect(result.mean).toBeCloseTo(50_000.5);
-});
-
+    expect(result.totalCount).toBe(100_000);
+    expect(result.uniqueCount).toBe(100_000);
+    expect(result.min).toBe(1);
+    expect(result.max).toBe(100_000);
+    expect(result.mean).toBeCloseTo(50_000.5);
+  });
 });

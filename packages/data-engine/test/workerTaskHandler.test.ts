@@ -1,9 +1,6 @@
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  createWorkerTaskHandler,
-} from '../src/worker/workerTaskHandler.js';
+import { createWorkerTaskHandler } from '../src/worker/workerTaskHandler.js';
 
 describe('createWorkerTaskHandler', () => {
   it('starts a task', () => {
@@ -57,8 +54,6 @@ describe('createWorkerTaskHandler', () => {
 
     handler.start('task-1');
 
-    expect(() => handler.start('task-1')).toThrow(
-      'Task already exists: task-1',
-    );
+    expect(() => handler.start('task-1')).toThrow('Task already exists: task-1');
   });
 });

@@ -47,15 +47,15 @@ flowchart TB
 
 ### 2.1. Trách nhiệm từng thành phần
 
-| Thành phần | Trách nhiệm |
-|---|---|
-| React | Hiển thị dữ liệu và nhận thao tác người dùng |
-| Storage Service | Cung cấp API lưu, đọc, Apply và Recovery |
-| IndexedDB | Lưu dữ liệu local |
-| Fastify | Tiếp nhận và xử lý API |
-| MongoDB Plugin | Quản lý kết nối MongoDB |
-| Business Modules | Quản lý dữ liệu theo nghiệp vụ |
-| MongoDB Atlas | Lưu dữ liệu phía server |
+| Thành phần       | Trách nhiệm                                  |
+| ---------------- | -------------------------------------------- |
+| React            | Hiển thị dữ liệu và nhận thao tác người dùng |
+| Storage Service  | Cung cấp API lưu, đọc, Apply và Recovery     |
+| IndexedDB        | Lưu dữ liệu local                            |
+| Fastify          | Tiếp nhận và xử lý API                       |
+| MongoDB Plugin   | Quản lý kết nối MongoDB                      |
+| Business Modules | Quản lý dữ liệu theo nghiệp vụ               |
+| MongoDB Atlas    | Lưu dữ liệu phía server                      |
 
 ### 2.2. Quy tắc phân quyền sở hữu module
 
@@ -68,18 +68,18 @@ flowchart TB
 
 ### 3.1. Các thực thể chính
 
-| Thực thể | Primary ID | Mô tả |
-|---|---|---|
-| Account | `accountId` | Tài khoản người dùng |
-| Project | `projectId` | Dự án của người dùng |
-| Dataset | `datasetId` | Bộ dữ liệu nguồn |
-| Version | `versionId` | Phiên bản dữ liệu |
-| Manifest | `manifestId` | Danh sách Chunk của một phiên bản |
-| Chunk | `chunkId` | Một phần nội dung dữ liệu |
-| Session | `sessionId` | Phiên làm việc |
-| Chart | `chartId` | Cấu hình và kết quả biểu đồ |
-| History | `operationId` | Lịch sử thao tác |
-| Outbox | `operationId` | Thao tác chờ đồng bộ |
+| Thực thể | Primary ID    | Mô tả                             |
+| -------- | ------------- | --------------------------------- |
+| Account  | `accountId`   | Tài khoản người dùng              |
+| Project  | `projectId`   | Dự án của người dùng              |
+| Dataset  | `datasetId`   | Bộ dữ liệu nguồn                  |
+| Version  | `versionId`   | Phiên bản dữ liệu                 |
+| Manifest | `manifestId`  | Danh sách Chunk của một phiên bản |
+| Chunk    | `chunkId`     | Một phần nội dung dữ liệu         |
+| Session  | `sessionId`   | Phiên làm việc                    |
+| Chart    | `chartId`     | Cấu hình và kết quả biểu đồ       |
+| History  | `operationId` | Lịch sử thao tác                  |
+| Outbox   | `operationId` | Thao tác chờ đồng bộ              |
 
 ### 3.2. Quan hệ giữa các thực thể
 
@@ -159,24 +159,25 @@ Quy tắc:
 
 ### 4.1. Collections
 
-| Collection | Nội dung | Module sở hữu |
-|---|---|---|
-| `accounts` | Thông tin tài khoản | Phúc |
-| `projects` | Thông tin Project | Tuấn |
-| `datasets` | Metadata Dataset | Tuấn |
-| `versions` | Metadata Version | Tuấn |
-| `manifests` | Danh sách Chunk | Tuấn |
-| `chunks` | Nội dung Chunk | Tuấn |
-| `sessions` | Trạng thái Session | Tuấn |
-| `charts` | Cấu hình và kết quả Chart | Tuấn |
-| `histories` | Lịch sử thao tác | Tuấn |
-| `outbox` | Trạng thái đồng bộ phía server | Tuấn |
+| Collection  | Nội dung                       | Module sở hữu |
+| ----------- | ------------------------------ | ------------- |
+| `accounts`  | Thông tin tài khoản            | Phúc          |
+| `projects`  | Thông tin Project              | Tuấn          |
+| `datasets`  | Metadata Dataset               | Tuấn          |
+| `versions`  | Metadata Version               | Tuấn          |
+| `manifests` | Danh sách Chunk                | Tuấn          |
+| `chunks`    | Nội dung Chunk                 | Tuấn          |
+| `sessions`  | Trạng thái Session             | Tuấn          |
+| `charts`    | Cấu hình và kết quả Chart      | Tuấn          |
+| `histories` | Lịch sử thao tác               | Tuấn          |
+| `outbox`    | Trạng thái đồng bộ phía server | Tuấn          |
 
 ### 4.2. Nguyên tắc lưu dữ liệu
 
 **Metadata và Data Content được lưu riêng biệt.**
 
 Metadata gồm:
+
 - ID.
 - Tên.
 - Quan hệ giữa các thực thể.
@@ -185,6 +186,7 @@ Metadata gồm:
 - Thông tin phiên bản và Manifest.
 
 Data Content gồm:
+
 - Nội dung các dòng dữ liệu.
 - Nội dung Chunk.
 - Dữ liệu biểu đồ nếu cần lưu kết quả lớn.
@@ -195,18 +197,18 @@ Không lưu toàn bộ Dataset lớn trong một MongoDB document vì MongoDB c�
 
 ### 4.3. Index đề xuất
 
-| Collection | Index | Mục đích |
-|---|---|---|
-| accounts | `usernameNormalized` UNIQUE | Không trùng username |
-| projects | `ownerId` | Truy vấn Project theo chủ sở hữu |
-| datasets | `projectId` UNIQUE | Một Dataset nguồn mỗi Project |
-| versions | `datasetId` | Truy vấn Version |
-| versions | `projectId, datasetId` | Truy vấn theo Project và Dataset |
-| chunks | `manifestId, ordinal` UNIQUE | Xác định thứ tự Chunk |
-| sessions | `projectId` UNIQUE | Một Session mỗi Project |
-| charts | `versionId` | Truy vấn Chart theo Version |
-| histories | `operationId` UNIQUE | Chống trùng thao tác |
-| outbox | `accountId, operationId` UNIQUE | Chống xử lý đồng bộ trùng |
+| Collection | Index                           | Mục đích                         |
+| ---------- | ------------------------------- | -------------------------------- |
+| accounts   | `usernameNormalized` UNIQUE     | Không trùng username             |
+| projects   | `ownerId`                       | Truy vấn Project theo chủ sở hữu |
+| datasets   | `projectId` UNIQUE              | Một Dataset nguồn mỗi Project    |
+| versions   | `datasetId`                     | Truy vấn Version                 |
+| versions   | `projectId, datasetId`          | Truy vấn theo Project và Dataset |
+| chunks     | `manifestId, ordinal` UNIQUE    | Xác định thứ tự Chunk            |
+| sessions   | `projectId` UNIQUE              | Một Session mỗi Project          |
+| charts     | `versionId`                     | Truy vấn Chart theo Version      |
+| histories  | `operationId` UNIQUE            | Chống trùng thao tác             |
+| outbox     | `accountId, operationId` UNIQUE | Chống xử lý đồng bộ trùng        |
 
 Lưu ý: Index và unique constraint cần được thống nhất với các module sở hữu collection trước khi triển khai.
 
@@ -246,17 +248,17 @@ IndexedDB là nơi lưu dữ liệu local chính của ứng dụng.
 
 ### 5.2. Object Stores
 
-| Object Store | Primary Key | Nội dung |
-|---|---|---|
-| `projects` | `id` | Project và current version |
-| `datasets` | `id` | Metadata Dataset |
-| `versions` | `id` | Các Version |
-| `manifests` | `id` | Danh sách Chunk |
-| `chunks` | `id` | Nội dung Chunk |
-| `sessions` | `id` | Trạng thái phiên |
-| `charts` | `id` | Cấu hình và kết quả Chart |
-| `histories` | `operationId` | Lịch sử thao tác |
-| `outbox` | `operationId` | Hàng đợi đồng bộ |
+| Object Store | Primary Key   | Nội dung                   |
+| ------------ | ------------- | -------------------------- |
+| `projects`   | `id`          | Project và current version |
+| `datasets`   | `id`          | Metadata Dataset           |
+| `versions`   | `id`          | Các Version                |
+| `manifests`  | `id`          | Danh sách Chunk            |
+| `chunks`     | `id`          | Nội dung Chunk             |
+| `sessions`   | `id`          | Trạng thái phiên           |
+| `charts`     | `id`          | Cấu hình và kết quả Chart  |
+| `histories`  | `operationId` | Lịch sử thao tác           |
+| `outbox`     | `operationId` | Hàng đợi đồng bộ           |
 
 Đây là schema IndexedDB đề xuất. Các trường metadata bổ sung phải được triển khai dưới dạng storage record wrapper, không tự ý thay đổi contracts dùng chung.
 
@@ -321,17 +323,17 @@ Các cấu trúc trên là ví dụ cho lớp lưu trữ local. Khi triển khai
 
 ### 5.4. Index IndexedDB đề xuất
 
-| Object Store | Index |
-|---|---|
-| projects | `ownerId` |
-| datasets | `projectId` |
-| versions | `projectId`, `datasetId` |
-| manifests | `versionId` nếu lưu quan hệ ngược |
-| chunks | `manifestId`, `manifestId + ordinal` |
-| sessions | `projectId` |
-| charts | `versionId` |
-| histories | `fromVersionId`, `toVersionId` |
-| outbox | `projectId`, `status` |
+| Object Store | Index                                |
+| ------------ | ------------------------------------ |
+| projects     | `ownerId`                            |
+| datasets     | `projectId`                          |
+| versions     | `projectId`, `datasetId`             |
+| manifests    | `versionId` nếu lưu quan hệ ngược    |
+| chunks       | `manifestId`, `manifestId + ordinal` |
+| sessions     | `projectId`                          |
+| charts       | `versionId`                          |
+| histories    | `fromVersionId`, `toVersionId`       |
+| outbox       | `projectId`, `status`                |
 
 Các index phải phục vụ truy vấn thực tế và không tạo dư thừa.
 
@@ -416,15 +418,15 @@ Nếu transaction công bố thất bại:
 
 ### 7.3. Xử lý lỗi
 
-| Tình huống | Hành động |
-|---|---|
-| Không mở được IndexedDB | Báo lỗi storage |
-| Thiếu Manifest | Không khôi phục Version đó |
-| Thiếu Chunk | Báo dữ liệu không đầy đủ |
-| Hash không khớp | Không sử dụng Chunk |
-| Current pointer không hợp lệ | Kiểm tra commit hợp lệ gần nhất |
-| Hết quota | Báo lỗi và giữ commit cũ |
-| Tab bị đóng đột ngột | Khôi phục commit hoàn chỉnh gần nhất |
+| Tình huống                   | Hành động                            |
+| ---------------------------- | ------------------------------------ |
+| Không mở được IndexedDB      | Báo lỗi storage                      |
+| Thiếu Manifest               | Không khôi phục Version đó           |
+| Thiếu Chunk                  | Báo dữ liệu không đầy đủ             |
+| Hash không khớp              | Không sử dụng Chunk                  |
+| Current pointer không hợp lệ | Kiểm tra commit hợp lệ gần nhất      |
+| Hết quota                    | Báo lỗi và giữ commit cũ             |
+| Tab bị đóng đột ngột         | Khôi phục commit hoàn chỉnh gần nhất |
 
 Không dựa vào sự kiện `beforeunload` để đảm bảo lưu dữ liệu.
 
@@ -541,28 +543,28 @@ Khi mở lại Session:
 
 ### 10.5. Điều kiện hoàn thành
 
-| Hạng mục | Tiêu chí |
-|---|---|
-| Database design | Có tài liệu và quan hệ ID rõ ràng |
-| IndexedDB | Ghi/đọc được dữ liệu thật |
-| Publication | Không công bố dữ liệu chưa hoàn chỉnh |
-| Recovery | Khôi phục được commit hợp lệ |
-| Session | Khôi phục đúng trạng thái đã lưu |
-| Outbox | Giữ dữ liệu chưa đồng bộ |
-| MongoDB | Có cấu hình và kết nối được khi được triển khai |
-| Integration | API storage thống nhất với Frontend và Worker |
-| Testing | Có test thành công và test lỗi |
+| Hạng mục        | Tiêu chí                                        |
+| --------------- | ----------------------------------------------- |
+| Database design | Có tài liệu và quan hệ ID rõ ràng               |
+| IndexedDB       | Ghi/đọc được dữ liệu thật                       |
+| Publication     | Không công bố dữ liệu chưa hoàn chỉnh           |
+| Recovery        | Khôi phục được commit hợp lệ                    |
+| Session         | Khôi phục đúng trạng thái đã lưu                |
+| Outbox          | Giữ dữ liệu chưa đồng bộ                        |
+| MongoDB         | Có cấu hình và kết nối được khi được triển khai |
+| Integration     | API storage thống nhất với Frontend và Worker   |
+| Testing         | Có test thành công và test lỗi                  |
 
 ## 11. Phạm vi triển khai và phân công
 
-| Thành viên | Phối hợp |
-|---|---|
-| Trâm | Thiết kế database, MongoDB plugin, IndexedDB, Publication và Recovery |
-| Phúc | Account, Authentication và username unique |
-| Tuấn | Project, Dataset, Version, Session, Chart và Sync API |
-| Phát | Tích hợp Storage API vào giao diện |
-| Nguyên | Worker xử lý dữ liệu, cung cấp dữ liệu đầu ra cho Storage |
-| Nga | Tích hợp Chart và trạng thái dữ liệu với giao diện 3D |
+| Thành viên | Phối hợp                                                              |
+| ---------- | --------------------------------------------------------------------- |
+| Trâm       | Thiết kế database, MongoDB plugin, IndexedDB, Publication và Recovery |
+| Phúc       | Account, Authentication và username unique                            |
+| Tuấn       | Project, Dataset, Version, Session, Chart và Sync API                 |
+| Phát       | Tích hợp Storage API vào giao diện                                    |
+| Nguyên     | Worker xử lý dữ liệu, cung cấp dữ liệu đầu ra cho Storage             |
+| Nga        | Tích hợp Chart và trạng thái dữ liệu với giao diện 3D                 |
 
 ## 12. Tài liệu tham khảo
 

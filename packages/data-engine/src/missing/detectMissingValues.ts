@@ -1,4 +1,3 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
 export interface MissingCell {
@@ -21,14 +20,11 @@ export interface MissingValuesReport {
   columns: MissingColumnSummary[];
 }
 
-export function detectMissingValues(
-  dataset: Dataset,
-): MissingValuesReport {
+export function detectMissingValues(dataset: Dataset): MissingValuesReport {
   const missingCells: MissingCell[] = [];
   const columns: MissingColumnSummary[] = [];
 
-  const totalCells =
-    dataset.rows.length * dataset.columns.length;
+  const totalCells = dataset.rows.length * dataset.columns.length;
 
   for (const column of dataset.columns) {
     let missingCount = 0;
@@ -47,20 +43,14 @@ export function detectMissingValues(
       columnId: column.id,
       columnName: column.name,
       missingCount,
-      missingPercentage:
-        dataset.rows.length === 0
-          ? 0
-          : (missingCount / dataset.rows.length) * 100,
+      missingPercentage: dataset.rows.length === 0 ? 0 : (missingCount / dataset.rows.length) * 100,
     });
   }
 
   return {
     totalMissingCells: missingCells.length,
     totalCells,
-    missingPercentage:
-      totalCells === 0
-        ? 0
-        : (missingCells.length / totalCells) * 100,
+    missingPercentage: totalCells === 0 ? 0 : (missingCells.length / totalCells) * 100,
     missingCells,
     columns,
   };

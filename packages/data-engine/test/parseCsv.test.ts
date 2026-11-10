@@ -1,9 +1,5 @@
-
 import { describe, expect, it } from 'vitest';
-import {
-  CsvParseError,
-  parseCsv,
-} from '../src/csv/parseCsv.js';
+import { CsvParseError, parseCsv } from '../src/csv/parseCsv.js';
 
 describe('parseCsv', () => {
   it('parses a basic comma-separated CSV', () => {
@@ -19,10 +15,7 @@ describe('parseCsv', () => {
   });
 
   it('supports BOM and semicolon delimiter', () => {
-    const result = parseCsv(
-      '\uFEFFname;value\nAn;1\nBinh;2\n',
-      ';',
-    );
+    const result = parseCsv('\uFEFFname;value\nAn;1\nBinh;2\n', ';');
 
     expect(result.records).toEqual([
       ['name', 'value'],
@@ -32,10 +25,7 @@ describe('parseCsv', () => {
   });
 
   it('supports quoted delimiters and newlines', () => {
-    const result = parseCsv(
-      'name,value\n"An, Binh","line 1\nline 2"',
-      ',',
-    );
+    const result = parseCsv('name,value\n"An, Binh","line 1\nline 2"', ',');
 
     expect(result.records).toEqual([
       ['name', 'value'],
@@ -56,14 +46,10 @@ describe('parseCsv', () => {
   });
 
   it('rejects unclosed quoted fields', () => {
-    expect(() => parseCsv('a,b\n"unfinished,2', ',')).toThrow(
-      CsvParseError,
-    );
+    expect(() => parseCsv('a,b\n"unfinished,2', ',')).toThrow(CsvParseError);
   });
 
   it('rejects unexpected text after closing quotes', () => {
-    expect(() => parseCsv('a,b\n"hello"x,2', ',')).toThrow(
-      CsvParseError,
-    );
+    expect(() => parseCsv('a,b\n"hello"x,2', ',')).toThrow(CsvParseError);
   });
 });

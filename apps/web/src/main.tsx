@@ -10,3 +10,9 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  void navigator.serviceWorker.register('/sw.js').catch(() => {
+    /* UI only marks offline ready after successful installation. */
+  });
+}

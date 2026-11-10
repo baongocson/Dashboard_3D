@@ -1,9 +1,6 @@
-
 import { describe, expect, it } from 'vitest';
 
-import {
-  createWorkerTaskManager,
-} from '../src/worker/workerTaskManager.js';
+import { createWorkerTaskManager } from '../src/worker/workerTaskManager.js';
 
 describe('createWorkerTaskManager', () => {
   it('starts and tracks a task', () => {
@@ -38,9 +35,7 @@ describe('createWorkerTaskManager', () => {
 
     manager.startTask('task-1');
 
-    expect(() => manager.startTask('task-1')).toThrow(
-      'Task already exists: task-1',
-    );
+    expect(() => manager.startTask('task-1')).toThrow('Task already exists: task-1');
   });
 
   it('finishes a task and releases its controller', () => {

@@ -1,12 +1,6 @@
+import { createWorkerTaskManager } from './workerTaskManager.js';
 
-import {
-  createWorkerTaskManager,
-} from './workerTaskManager.js';
-
-import type {
-  WorkerCancelRequest,
-  WorkerCancelledResponse,
-} from './workerMessages.js';
+import type { WorkerCancelRequest, WorkerCancelledResponse } from './workerMessages.js';
 
 export interface WorkerTaskHandler {
   start: (taskId: string) => AbortSignal;
@@ -34,10 +28,9 @@ export function createWorkerTaskHandler(): WorkerTaskHandler {
       };
     },
 
-
-finish: (taskId) => {
-  manager.finishTask(taskId);
-},
+    finish: (taskId) => {
+      manager.finishTask(taskId);
+    },
 
     isActive: (taskId) => manager.hasTask(taskId),
   };

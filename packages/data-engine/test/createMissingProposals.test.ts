@@ -1,10 +1,7 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  createMissingProposals,
-} from '../src/missing/createMissingProposals.js';
+import { createMissingProposals } from '../src/missing/createMissingProposals.js';
 
 describe('createMissingProposals', () => {
   const dataset: Dataset = {
@@ -28,6 +25,7 @@ describe('createMissingProposals', () => {
     expect(proposals).toEqual([
       {
         columnId: 'c1',
+        baseVersionId: 'v1',
         columnName: 'Name',
         strategy: 'constant',
         proposedValue: 'Unknown',
@@ -37,20 +35,16 @@ describe('createMissingProposals', () => {
   });
 
   it('proposes the mean for missing numeric values', () => {
-    const proposals = createMissingProposals(dataset, [
-      { columnId: 'c2', strategy: 'mean' },
-    ]);
+    const proposals = createMissingProposals(dataset, [{ columnId: 'c2', strategy: 'mean' }]);
 
     expect(proposals[0]?.proposedValue).toBe(25);
     expect(proposals[0]?.affectedRowIds).toEqual(['r2']);
   });
 
   it('rejects mean strategy for text columns', () => {
-    expect(() =>
-      createMissingProposals(dataset, [
-        { columnId: 'c1', strategy: 'mean' },
-      ]),
-    ).toThrow('Mean strategy requires a numeric column');
+    expect(() => createMissingProposals(dataset, [{ columnId: 'c1', strategy: 'mean' }])).toThrow(
+      'Mean strategy requires a numeric column',
+    );
   });
 
   it('rejects duplicate requests for one column', () => {
@@ -65,9 +59,7 @@ describe('createMissingProposals', () => {
   it('does not modify the original dataset', () => {
     const original = structuredClone(dataset);
 
-    createMissingProposals(dataset, [
-      { columnId: 'c2', strategy: 'mean' },
-    ]);
+    createMissingProposals(dataset, [{ columnId: 'c2', strategy: 'mean' }]);
 
     expect(dataset).toEqual(original);
   });

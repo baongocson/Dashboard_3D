@@ -1,4 +1,3 @@
-
 import { describe, expect, it, vi } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
@@ -39,24 +38,24 @@ describe('processDatasetChunks', () => {
 
     expect(processedRows).toEqual(['r1', 'r2', 'r3', 'r4', 'r5']);
 
-    expect(progressMessages.map((progress) => progress.completed)).toEqual([
-      2, 4, 5,
-    ]);
+    expect(progressMessages.map((progress) => progress.completed)).toEqual([2, 4, 5]);
 
-    expect(progressMessages.map((progress) => progress.percentage)).toEqual([
-      40, 80, 100,
-    ]);
+    expect(progressMessages.map((progress) => progress.percentage)).toEqual([40, 80, 100]);
   });
 
   // TEST 2: Dataset rỗng
   it('handles an empty dataset', async () => {
     const onProgress = vi.fn();
 
-    await processDatasetChunks('task-empty', { ...dataset, rows: [] }, {
-      chunkSize: 2,
-      processChunk: vi.fn(),
-      onProgress,
-    });
+    await processDatasetChunks(
+      'task-empty',
+      { ...dataset, rows: [] },
+      {
+        chunkSize: 2,
+        processChunk: vi.fn(),
+        onProgress,
+      },
+    );
 
     expect(onProgress).toHaveBeenCalledWith({
       taskId: 'task-empty',

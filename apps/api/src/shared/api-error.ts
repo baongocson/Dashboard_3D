@@ -1,6 +1,6 @@
 import type { ApiErrorCode, ApiErrorResponse } from '@dashboard/contracts';
 import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
-import type { ZodError } from 'zod';
+import { ZodError } from 'zod';
 
 const statusByCode: Record<ApiErrorCode, number> = {
   VALIDATION_ERROR: 400,
@@ -59,6 +59,7 @@ export function sendApiError(reply: FastifyReply, error: ApiError) {
 
 /** Global handler: every error leaves the API in the contract format, never with internals. */
 export function apiErrorHandler(error: FastifyError, request: FastifyRequest, reply: FastifyReply) {
+  if (error instanceof ZodError) return sendApiError(reply, validationError(error));
   if (error instanceof ApiError) return sendApiError(reply, error);
   if (error instanceof DatabaseUnavailableError) {
     request.log.warn({ err: error.cause }, 'database unavailable');

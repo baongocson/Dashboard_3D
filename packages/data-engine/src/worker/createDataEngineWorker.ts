@@ -1,8 +1,4 @@
-
-import type {
-  WorkerRequest,
-  WorkerResponse,
-} from './workerMessages.js';
+import type { WorkerRequest, WorkerResponse } from './workerMessages.js';
 
 export interface DataEngineWorkerClient {
   postMessage: (request: WorkerRequest) => void;
@@ -23,17 +19,12 @@ export function sendWorkerRequest(
   request: WorkerRequest,
   onResponse: (response: WorkerResponse) => void,
 ): void {
-  const handleMessage = (
-    event: MessageEvent<WorkerResponse>,
-  ): void => {
+  const handleMessage = (event: MessageEvent<WorkerResponse>): void => {
     if (event.data.taskId !== request.taskId) {
       return;
     }
 
-    worker.removeEventListener(
-      'message',
-      handleMessage,
-    );
+    worker.removeEventListener('message', handleMessage);
 
     onResponse(event.data);
   };

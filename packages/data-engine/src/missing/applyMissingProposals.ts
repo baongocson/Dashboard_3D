@@ -1,12 +1,6 @@
+import { datasetSchema, type Dataset } from '@dashboard/contracts';
 
-import {
-  datasetSchema,
-  type Dataset,
-} from '@dashboard/contracts';
-
-import type {
-  MissingFillProposal,
-} from './createMissingProposals.js';
+import type { MissingFillProposal } from './createMissingProposals.js';
 
 export function applyMissingProposals(
   dataset: Dataset,
@@ -21,27 +15,21 @@ export function applyMissingProposals(
     throw new Error('New version ID must differ from current version');
   }
 
-  const columnIds = new Set(
-    dataset.columns.map((column) => column.id),
-  );
+  const columnIds = new Set(dataset.columns.map((column) => column.id));
 
-  const rowIds = new Set(
-    dataset.rows.map((row) => row.id),
-  );
+  const rowIds = new Set(dataset.rows.map((row) => row.id));
 
   const seenColumns = new Set<string>();
 
   for (const proposal of proposals) {
+    if (proposal.baseVersionId !== dataset.versionId)
+      throw new Error('Stale proposal: preview again');
     if (!columnIds.has(proposal.columnId)) {
-      throw new Error(
-        `Column not found: ${proposal.columnId}`,
-      );
+      throw new Error(`Column not found: ${proposal.columnId}`);
     }
 
     if (seenColumns.has(proposal.columnId)) {
-      throw new Error(
-        `Duplicate proposal for column: ${proposal.columnId}`,
-      );
+      throw new Error(`Duplicate proposal for column: ${proposal.columnId}`);
     }
 
     seenColumns.add(proposal.columnId);
@@ -58,9 +46,7 @@ export function applyMissingProposals(
     cells: { ...row.cells },
   }));
 
-  const nextRowById = new Map(
-    nextRows.map((row) => [row.id, row]),
-  );
+  const nextRowById = new Map(nextRows.map((row) => [row.id, row]));
 
   for (const proposal of proposals) {
     for (const rowId of proposal.affectedRowIds) {
@@ -71,9 +57,7 @@ export function applyMissingProposals(
       }
 
       if (row.cells[proposal.columnId] !== null) {
-        throw new Error(
-          `Cell is not missing: ${rowId}/${proposal.columnId}`,
-        );
+        throw new Error(`Cell is not missing: ${rowId}/${proposal.columnId}`);
       }
 
       row.cells[proposal.columnId] = proposal.proposedValue;

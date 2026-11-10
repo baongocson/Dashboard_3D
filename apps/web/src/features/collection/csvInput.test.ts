@@ -6,8 +6,11 @@ describe('Collection input preflight', () => {
   const options = defaultCsvOptions();
   it('has the expected contract defaults', () => {
     expect(options).toEqual({
-      encoding: 'utf-8', delimiter: 'auto', header: 'first-row',
-      additionalMissingTokens: [], confirmedHeaders: null,
+      encoding: 'utf-8',
+      delimiter: 'auto',
+      header: 'first-row',
+      additionalMissingTokens: [],
+      confirmedHeaders: null,
     });
   });
   it('requires a selected file', () => {
@@ -19,9 +22,16 @@ describe('Collection input preflight', () => {
   });
   it('allows the exact byte limit and blocks one byte above', () => {
     expect(validateCsvInput({ name: 'dataset.CSV', size: MAX_CSV_BYTES }, options)).toBeNull();
-    expect(validateCsvInput({ name: 'dataset.csv', size: MAX_CSV_BYTES + 1 }, options)).toMatch(/vượt/i);
+    expect(validateCsvInput({ name: 'dataset.csv', size: MAX_CSV_BYTES + 1 }, options)).toMatch(
+      /vượt/i,
+    );
   });
   it('allows optional missing tokens from the contract', () => {
-    expect(validateCsvInput({ name: 'data.csv', size: 10 }, { ...options, additionalMissingTokens: ['NA', '-'] })).toBeNull();
+    expect(
+      validateCsvInput(
+        { name: 'data.csv', size: 10 },
+        { ...options, additionalMissingTokens: ['NA', '-'] },
+      ),
+    ).toBeNull();
   });
 });

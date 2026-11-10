@@ -1,4 +1,3 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
 export interface DatasetChunk {
@@ -8,21 +7,14 @@ export interface DatasetChunk {
   rows: Dataset['rows'];
 }
 
-export function chunkDataset(
-  dataset: Dataset,
-  chunkSize: number,
-): DatasetChunk[] {
+export function chunkDataset(dataset: Dataset, chunkSize: number): DatasetChunk[] {
   if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) {
     throw new Error('chunkSize must be a positive safe integer');
   }
 
   const chunks: DatasetChunk[] = [];
 
-  for (
-    let start = 0;
-    start < dataset.rows.length;
-    start += chunkSize
-  ) {
+  for (let start = 0; start < dataset.rows.length; start += chunkSize) {
     const end = Math.min(start + chunkSize, dataset.rows.length);
 
     chunks.push({

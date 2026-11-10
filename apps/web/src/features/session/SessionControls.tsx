@@ -26,7 +26,12 @@ const syncLabels: Record<SyncStatus, string> = {
   failed: 'Đồng bộ lỗi',
 };
 
-export function SessionControls({ storageStatus = 'not-connected', syncStatus = 'not-connected', onSave, onExit }: SessionControlsProps) {
+export function SessionControls({
+  storageStatus = 'not-connected',
+  syncStatus = 'not-connected',
+  onSave,
+  onExit,
+}: SessionControlsProps) {
   const [running, setRunning] = useState<'save' | 'exit' | null>(null);
   const [error, setError] = useState<string | null>(null);
   const busy = running !== null || storageStatus === 'saving';
@@ -40,7 +45,9 @@ export function SessionControls({ storageStatus = 'not-connected', syncStatus = 
       // Storage adapter must only resolve when the durable local commit has completed.
       await callback();
     } catch (caught: unknown) {
-      setError(caught instanceof Error ? caught.message : 'Không thể lưu phiên. Vẫn ở trang hiện tại.');
+      setError(
+        caught instanceof Error ? caught.message : 'Không thể lưu phiên. Vẫn ở trang hiện tại.',
+      );
     } finally {
       setRunning(null);
     }
@@ -52,9 +59,31 @@ export function SessionControls({ storageStatus = 'not-connected', syncStatus = 
         <span className="status-text">Local: {storageLabels[storageStatus]}</span>
         <span className="status-text">Sync: {syncLabels[syncStatus]}</span>
       </div>
-      <button type="button" className="quiet-button" disabled={!onSave || busy} onClick={() => { void run('save'); }}>Lưu phiên</button>
-      <button type="button" className="quiet-button" disabled={!onExit || busy} onClick={() => { void run('exit'); }}>Thoát phiên</button>
-      {error && <span className="header-error" role="alert">{error}</span>}
+      <button
+        type="button"
+        className="quiet-button"
+        disabled={!onSave || busy}
+        onClick={() => {
+          void run('save');
+        }}
+      >
+        Lưu phiên
+      </button>
+      <button
+        type="button"
+        className="quiet-button"
+        disabled={!onExit || busy}
+        onClick={() => {
+          void run('exit');
+        }}
+      >
+        Thoát phiên
+      </button>
+      {error && (
+        <span className="header-error" role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
 }

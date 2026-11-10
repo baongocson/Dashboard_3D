@@ -1,10 +1,7 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  detectMissingValues,
-} from '../src/missing/detectMissingValues.js';
+import { detectMissingValues } from '../src/missing/detectMissingValues.js';
 
 describe('detectMissingValues', () => {
   const dataset: Dataset = {
@@ -44,17 +41,11 @@ describe('detectMissingValues', () => {
   it('calculates missing percentages', () => {
     const report = detectMissingValues(dataset);
 
-    expect(report.missingPercentage).toBeCloseTo(
-      (2 / 9) * 100,
-    );
+    expect(report.missingPercentage).toBeCloseTo((2 / 9) * 100);
 
-    expect(report.columns[1]?.missingPercentage).toBeCloseTo(
-      100 / 3,
-    );
+    expect(report.columns[1]?.missingPercentage).toBeCloseTo(100 / 3);
 
-    expect(report.columns[2]?.missingPercentage).toBeCloseTo(
-      100 / 3,
-    );
+    expect(report.columns[2]?.missingPercentage).toBeCloseTo(100 / 3);
   });
 
   it('does not modify the original dataset', () => {
@@ -68,9 +59,7 @@ describe('detectMissingValues', () => {
   it('handles datasets with no rows', () => {
     const emptyDataset: Dataset = {
       versionId: 'empty',
-      columns: [
-        { id: 'c1', name: 'Value', type: 'number' },
-      ],
+      columns: [{ id: 'c1', name: 'Value', type: 'number' }],
       rows: [],
     };
 

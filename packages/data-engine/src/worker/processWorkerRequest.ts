@@ -1,24 +1,12 @@
+import { getDatasetSummary } from '../stats/getDatasetSummary.js';
 
-import {
-  getDatasetSummary,
-} from '../stats/getDatasetSummary.js';
+import { getColumnStatistics } from '../stats/getColumnStatistics.js';
 
-import {
-  getColumnStatistics,
-} from '../stats/getColumnStatistics.js';
+import { detectMissingValues } from '../missing/detectMissingValues.js';
 
-import {
-  detectMissingValues,
-} from '../missing/detectMissingValues.js';
+import type { WorkerRequest, WorkerResponse } from './workerMessages.js';
 
-import type {
-  WorkerRequest,
-  WorkerResponse,
-} from './workerMessages.js';
-
-export function processWorkerRequest(
-  request: WorkerRequest,
-): WorkerResponse {
+export function processWorkerRequest(request: WorkerRequest): WorkerResponse {
   try {
     switch (request.type) {
       case 'dataset-summary':
@@ -34,10 +22,7 @@ export function processWorkerRequest(
           taskId: request.taskId,
           status: 'success',
           type: 'column-statistics',
-          result: getColumnStatistics(
-            request.dataset,
-            request.columnId,
-          ),
+          result: getColumnStatistics(request.dataset, request.columnId),
         };
 
       case 'missing-values':
@@ -52,10 +37,7 @@ export function processWorkerRequest(
     return {
       taskId: request.taskId,
       status: 'error',
-      message:
-        error instanceof Error
-          ? error.message
-          : 'Unknown worker processing error',
+      message: error instanceof Error ? error.message : 'Unknown worker processing error',
     };
   }
 }

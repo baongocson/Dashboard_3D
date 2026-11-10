@@ -12,6 +12,43 @@ const PASSWORD = 'correct horse battery';
 const HOUR = 60 * 60 * 1000;
 const FAST_SCRYPT = { N: 2 ** 10, r: 8, p: 1 };
 
+it('reserves rate limit slots before concurrent password checks', async () => {
+  const t = setup();
+  await t.register('Concurrent');
+  const responses = await Promise.all(
+    Array.from({ length: 20 }, () => t.login('Concurrent', 'wrong password value')),
+  );
+  expect(responses.filter((r) => r.statusCode === 401)).toHaveLength(5);
+  expect(responses.filter((r) => r.statusCode === 429)).toHaveLength(15);
+});
+it('rejected CSRF mutation does not extend idle expiry', async () => {
+  const t = setup();
+  await t.register('Alice');
+  const login = await t.signIn('Alice');
+  t.advance(2 * HOUR);
+  expect(
+    (
+      await t.app.inject({
+        method: 'PATCH',
+        url: '/users/me',
+        payload: { displayName: 'Name' },
+        headers: { origin: ORIGIN, cookie: login.cookie, 'x-csrf-token': 'invalid' },
+      })
+    ).statusCode,
+  ).toBe(403);
+  const probe = await t.app.inject({
+    url: '/auth/session',
+    headers: { cookie: login.cookie, 'x-session-activity': 'background' },
+  });
+  expect(authSessionResponseSchema.parse(probe.json()).idleExpiresAt).toBe(
+    login.body.idleExpiresAt,
+  );
+});
+it('rejects unpaired Unicode surrogates at registration', async () => {
+  const t = setup();
+  expect((await t.register('Unicode', 'valid-length-password\ud800')).statusCode).toBe(400);
+});
+
 type App = ReturnType<typeof createApp>;
 const apps: App[] = [];
 afterEach(async () => {

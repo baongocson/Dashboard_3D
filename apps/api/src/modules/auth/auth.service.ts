@@ -115,6 +115,7 @@ export class AuthService {
         retryAfterSeconds,
       });
 
+    this.rateLimiter.recordFailure(ip, usernameNormalized, nowMs);
     const user = await this.users.findByNormalizedUsername(usernameNormalized);
     // Unknown usernames still pay for one hash so response time does not reveal which exist.
     this.dummyHash ??= hashPassword(randomUUID(), this.scryptParams);
@@ -123,7 +124,6 @@ export class AuthService {
       user?.passwordHash ?? (await this.dummyHash),
     );
     if (!user || !valid) {
-      this.rateLimiter.recordFailure(ip, usernameNormalized, nowMs);
       throw new ApiError('INVALID_CREDENTIALS', 'Username or password is incorrect');
     }
     this.rateLimiter.recordSuccess(ip, usernameNormalized);

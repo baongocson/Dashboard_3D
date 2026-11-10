@@ -1,9 +1,4 @@
-
-import {
-  csvOptionsSchema,
-  datasetSchema,
-  type Dataset,
-} from '@dashboard/contracts';
+import { csvOptionsSchema, datasetSchema, type Dataset } from '@dashboard/contracts';
 import { z } from 'zod';
 
 import { readCsvFile } from './readCsvFile.js';
@@ -23,9 +18,7 @@ export async function importCsv(
   const content = await readCsvFile(file);
 
   const delimiter =
-    validatedOptions.delimiter === 'auto'
-      ? detectDelimiter(content)
-      : validatedOptions.delimiter;
+    validatedOptions.delimiter === 'auto' ? detectDelimiter(content) : validatedOptions.delimiter;
 
   const parsed = parseCsv(content, delimiter);
 

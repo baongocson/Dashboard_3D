@@ -1,8 +1,4 @@
-
-import {
-  datasetSchema,
-  type Dataset,
-} from '@dashboard/contracts';
+import { datasetSchema, type Dataset } from '@dashboard/contracts';
 
 export interface DatasetHistory {
   versions: Dataset[];
@@ -13,9 +9,7 @@ function cloneDataset(dataset: Dataset): Dataset {
   return structuredClone(dataset);
 }
 
-export function createDatasetHistory(
-  initialDataset: Dataset,
-): DatasetHistory {
+export function createDatasetHistory(initialDataset: Dataset): DatasetHistory {
   const validated = datasetSchema.parse(initialDataset);
 
   return {
@@ -24,9 +18,7 @@ export function createDatasetHistory(
   };
 }
 
-export function getCurrentDataset(
-  history: DatasetHistory,
-): Dataset {
+export function getCurrentDataset(history: DatasetHistory): Dataset {
   const dataset = history.versions[history.currentIndex];
 
   if (dataset === undefined) {
@@ -36,10 +28,7 @@ export function getCurrentDataset(
   return cloneDataset(dataset);
 }
 
-export function pushDatasetVersion(
-  history: DatasetHistory,
-  nextDataset: Dataset,
-): DatasetHistory {
+export function pushDatasetVersion(history: DatasetHistory, nextDataset: Dataset): DatasetHistory {
   const validated = datasetSchema.parse(nextDataset);
 
   const current = history.versions[history.currentIndex];
@@ -49,36 +38,22 @@ export function pushDatasetVersion(
   }
 
   if (validated.versionId === current.versionId) {
-    throw new Error(
-      'New dataset version ID must differ from current version',
-    );
+    throw new Error('New dataset version ID must differ from current version');
   }
 
-  const retainedVersions = history.versions.slice(
-    0,
-    history.currentIndex + 1,
-  );
+  const retainedVersions = history.versions.slice(0, history.currentIndex + 1);
 
-  if (
-    retainedVersions.some(
-      (version) => version.versionId === validated.versionId,
-    )
-  ) {
+  if (retainedVersions.some((version) => version.versionId === validated.versionId)) {
     throw new Error('Duplicate dataset version ID');
   }
 
   return {
-    versions: [
-      ...retainedVersions.map(cloneDataset),
-      cloneDataset(validated),
-    ],
+    versions: [...retainedVersions.map(cloneDataset), cloneDataset(validated)],
     currentIndex: retainedVersions.length,
   };
 }
 
-export function undoDataset(
-  history: DatasetHistory,
-): DatasetHistory {
+export function undoDataset(history: DatasetHistory): DatasetHistory {
   if (history.currentIndex <= 0) {
     return history;
   }
@@ -89,9 +64,7 @@ export function undoDataset(
   };
 }
 
-export function redoDataset(
-  history: DatasetHistory,
-): DatasetHistory {
+export function redoDataset(history: DatasetHistory): DatasetHistory {
   if (history.currentIndex >= history.versions.length - 1) {
     return history;
   }

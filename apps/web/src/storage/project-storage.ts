@@ -1,19 +1,8 @@
+import { db, type Project, type Session } from './db';
 
-import {
-  db,
-  type Project,
-  type Session,
-} from './db';
+import { projectSchema, sessionSchema } from '@dashboard/contracts';
 
-import {
-  projectSchema,
-  sessionSchema,
-} from '@dashboard/contracts';
-
-export async function saveProject(
-  project: Project,
-  session: Session,
-): Promise<void> {
+export async function saveProject(project: Project, session: Session): Promise<void> {
   const validProject = projectSchema.parse(project);
   const validSession = sessionSchema.parse(session);
 
@@ -25,27 +14,18 @@ export async function saveProject(
     throw new Error('Project và session không khớp nhau');
   }
 
-  await db.transaction(
-    'rw',
-    db.projects,
-    db.sessions,
-    async () => {
-      await db.projects.put(validProject);
-      await db.sessions.put(validSession);
-    },
-  );
+  await db.transaction('rw', db.projects, db.sessions, async () => {
+    await db.projects.put(validProject);
+    await db.sessions.put(validSession);
+  });
 }
 
-export async function getProject(
-  projectId: string,
-): Promise<Project | undefined> {
+export async function getProject(projectId: string): Promise<Project | undefined> {
   return db.projects.get(projectId);
 }
 
 // Lấy session theo ID
-export async function getSession(
-  sessionId: string,
-): Promise<Session | undefined> {
+export async function getSession(sessionId: string): Promise<Session | undefined> {
   return db.sessions.get(sessionId);
 }
 
@@ -65,57 +45,32 @@ export async function getProjectBundle(projectId: string) {
   };
 }
 
-export async function getProjectsByOwner(
-  ownerId: string,
-): Promise<Project[]> {
-  return db.projects
-    .where('ownerId')
-    .equals(ownerId)
-    .toArray();
+export async function getProjectsByOwner(ownerId: string): Promise<Project[]> {
+  return db.projects.where('ownerId').equals(ownerId).toArray();
 }
 
 // Xóa database khi cần reset môi trường thử nghiệm
 export async function clearLocalDatabase(): Promise<void> {
-  await db.transaction(
-    'rw',
-    db.projects,
-    db.sessions,
-    async () => {
-      await db.projects.clear();
-      await db.sessions.clear();
-    },
-  );
+  await db.transaction('rw', db.projects, db.sessions, async () => {
+    await db.projects.clear();
+    await db.sessions.clear();
+  });
 }
 
-export async function getSessionsByProject(
-  projectId: string,
-) {
-  return db.sessions
-    .where('projectId')
-    .equals(projectId)
-    .toArray();
+export async function getSessionsByProject(projectId: string) {
+  return db.sessions.where('projectId').equals(projectId).toArray();
 }
 
-export async function deleteProject(
-  projectId: string,
-): Promise<void> {
+export async function deleteProject(projectId: string): Promise<void> {
   const project = await db.projects.get(projectId);
 
   if (!project) {
     return;
   }
 
-  await db.transaction(
-    'rw',
-    db.projects,
-    db.sessions,
-    async () => {
-      await db.sessions
-        .where('projectId')
-        .equals(projectId)
-        .delete();
+  await db.transaction('rw', db.projects, db.sessions, async () => {
+    await db.sessions.where('projectId').equals(projectId).delete();
 
-      await db.projects.delete(projectId);
-    },
-  );
+    await db.projects.delete(projectId);
+  });
 }

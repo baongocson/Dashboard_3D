@@ -12,8 +12,13 @@ describe('Pre-processing UI safety rules', () => {
     expect(parseFillValue('number', '22')).toEqual({ valid: true, value: 22 });
   });
   it('only builds a fill-cell operation for current missing cells', () => {
-    expect(buildFillConfig(demoDataset, missingAge, '22')).toMatchObject({ method: 'fill-cell', value: 22 });
-    expect(buildFillConfig(demoDataset, { ...missingAge, versionId: 'old-version' }, '22')).toBeNull();
+    expect(buildFillConfig(demoDataset, missingAge, '22')).toMatchObject({
+      method: 'fill-cell',
+      value: 22,
+    });
+    expect(
+      buildFillConfig(demoDataset, { ...missingAge, versionId: 'old-version' }, '22'),
+    ).toBeNull();
     expect(buildFillConfig(demoDataset, { ...missingAge, rowId: 'row-001' }, '22')).toBeNull();
   });
   it('invalidates a preview when parameters change', async () => {
@@ -23,7 +28,15 @@ describe('Pre-processing UI safety rules', () => {
     const preview = await demoPreview(config);
     expect(isPreviewCurrent(preview, config, demoDataset)).toBe(true);
     expect(isPreviewCurrent(preview, { ...config, value: 23 }, demoDataset)).toBe(false);
-    expect(isPreviewCurrent(preview, { ...config, selection: { ...missingAge, rowId: 'row-004' } }, demoDataset)).toBe(false);
-    expect(isPreviewCurrent({ ...preview, baseVersionId: 'old-version' }, config, demoDataset)).toBe(false);
+    expect(
+      isPreviewCurrent(
+        preview,
+        { ...config, selection: { ...missingAge, rowId: 'row-004' } },
+        demoDataset,
+      ),
+    ).toBe(false);
+    expect(
+      isPreviewCurrent({ ...preview, baseVersionId: 'old-version' }, config, demoDataset),
+    ).toBe(false);
   });
 });

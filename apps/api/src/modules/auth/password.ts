@@ -35,6 +35,7 @@ export async function hashPassword(
   password: string,
   params: ScryptParams = DEFAULT_SCRYPT_PARAMS,
 ): Promise<string> {
+  if (/[\uD800-\uDFFF]/u.test(password)) throw new Error('Password contains invalid Unicode');
   const salt = randomBytes(SALT_BYTES);
   const key = await derive(password, salt, params);
   return `scrypt$v1$N=${String(params.N)},r=${String(params.r)},p=${String(params.p)}$${salt.toString('base64')}$${key.toString('base64')}`;
@@ -55,6 +56,7 @@ function parse(hash: string): { params: ScryptParams; salt: Buffer; key: Buffer 
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  if (/[\uD800-\uDFFF]/u.test(password)) return false;
   const parsed = parse(hash);
   if (!parsed) return false;
   const key = await derive(password, parsed.salt, parsed.params);

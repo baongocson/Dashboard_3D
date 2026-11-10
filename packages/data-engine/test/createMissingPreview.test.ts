@@ -1,10 +1,7 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  createMissingPreview,
-} from '../src/missing/createMissingPreview.js';
+import { createMissingPreview } from '../src/missing/createMissingPreview.js';
 
 describe('createMissingPreview', () => {
   const dataset: Dataset = {

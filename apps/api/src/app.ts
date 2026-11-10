@@ -1,3 +1,5 @@
+import { registerProjectRoutes } from './modules/projects/projects.routes.js';
+import type { ProjectStore } from './modules/projects/project-store.js';
 import { randomBytes } from 'node:crypto';
 import fastifyCors from '@fastify/cors';
 import { CSRF_HEADER, SESSION_ACTIVITY_HEADER } from '@dashboard/contracts';
@@ -21,6 +23,7 @@ export interface AppOptions {
   cookieSecure?: boolean;
   auth?: Omit<AuthServiceOptions, 'users' | 'sessions' | 'sessionSecret'>;
   logger?: boolean;
+  projectStore?: ProjectStore;
 }
 
 export function createApp(options: AppOptions = {}) {
@@ -51,8 +54,15 @@ export function createApp(options: AppOptions = {}) {
     allowedHeaders: ['content-type', CSRF_HEADER, SESSION_ACTIVITY_HEADER],
   });
 
-  // Liveness only: this endpoint does NOT claim Atlas is reachable or sync is ready.
-  app.get('/health', () => ({ status: 'ok', database: 'not-configured', syncReady: false }));
+  // Live database ping is distinct from an acknowledged dataset publication.
+  app.get('/health', async () => {
+    const syncReady = (await options.projectStore?.ready()) ?? false;
+    return {
+      status: 'ok',
+      database: options.projectStore ? (syncReady ? 'connected' : 'unavailable') : 'not-configured',
+      syncReady,
+    };
+  });
 
   const stores = options.authStores ?? unavailableAuthStores;
   const service = new AuthService({
@@ -68,5 +78,6 @@ export function createApp(options: AppOptions = {}) {
       options.cookieSecure ?? allowedOrigins.every((origin) => origin.startsWith('https://')),
   });
   registerUsersRoutes(app, { users: stores.users, now: () => service.getNow() });
+  registerProjectRoutes(app, options.projectStore);
   return app;
 }

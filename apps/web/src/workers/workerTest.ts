@@ -1,4 +1,3 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
 import { createBrowserDataEngineWorker } from './createBrowserDataEngineWorker.js';
@@ -8,18 +7,12 @@ import type {
   WorkerRuntimeResponse,
 } from '../../../../packages/data-engine/src/worker/workerMessages.js';
 
-const summaryButton =
-  document.querySelector<HTMLButtonElement>('#run-summary');
-const runButton =
-  document.querySelector<HTMLButtonElement>('#run-test');
-const cancelButton =
-  document.querySelector<HTMLButtonElement>('#cancel-test');
-const progressBar =
-  document.querySelector<HTMLProgressElement>('#worker-progress');
-const progressText =
-  document.querySelector<HTMLElement>('#progress-text');
-const resultElement =
-  document.querySelector<HTMLElement>('#result');
+const summaryButton = document.querySelector<HTMLButtonElement>('#run-summary');
+const runButton = document.querySelector<HTMLButtonElement>('#run-test');
+const cancelButton = document.querySelector<HTMLButtonElement>('#cancel-test');
+const progressBar = document.querySelector<HTMLProgressElement>('#worker-progress');
+const progressText = document.querySelector<HTMLElement>('#progress-text');
+const resultElement = document.querySelector<HTMLElement>('#result');
 
 if (
   summaryButton === null ||
@@ -38,11 +31,7 @@ let activeTaskId: string | null = null;
 let nextTaskNumber = 0;
 
 function setRunning(running: boolean): void {
-  if (
-    summaryButton === null ||
-    runButton === null ||
-    cancelButton === null
-  ) {
+  if (summaryButton === null || runButton === null || cancelButton === null) {
     return;
   }
 
@@ -93,11 +82,7 @@ function createLargeDataset(rowCount: number): Dataset {
 }
 
 function startTask(request: WorkerRuntimeRequest): void {
-  if (
-    progressBar === null ||
-    progressText === null ||
-    resultElement === null
-  ) {
+  if (progressBar === null || progressText === null || resultElement === null) {
     return;
   }
 
@@ -132,7 +117,6 @@ runButton.addEventListener('click', () => {
   });
 });
 
-
 cancelButton.addEventListener('click', () => {
   if (activeTaskId === null) {
     return;
@@ -147,42 +131,37 @@ cancelButton.addEventListener('click', () => {
   resultElement.textContent = 'Đã gửi yêu cầu hủy...';
 });
 
-worker.addEventListener(
-  'message',
-  (event: MessageEvent<WorkerRuntimeResponse>) => {
-    const response = event.data;
+worker.addEventListener('message', (event: MessageEvent<WorkerRuntimeResponse>) => {
+  const response = event.data;
 
-    if (response.taskId !== activeTaskId) {
-      return;
-    }
+  if (response.taskId !== activeTaskId) {
+    return;
+  }
 
-    if (response.status === 'progress') {
-      progressBar.value = response.percentage;
+  if (response.status === 'progress') {
+    progressBar.value = response.percentage;
 
-      progressText.textContent =
-        `${String(response.percentage)}% ` +
-        `(${String(response.completed)}/${String(response.total)} dòng)`;
+    progressText.textContent =
+      `${String(response.percentage)}% ` +
+      `(${String(response.completed)}/${String(response.total)} dòng)`;
 
-      return;
-    }
+    return;
+  }
 
+  if (response.status === 'success') {
+    progressBar.value = 100;
+    progressText.textContent = 'Hoàn thành';
+  } else if (response.status === 'error') {
+    progressText.textContent = 'Có lỗi';
+  } else {
+    progressText.textContent = 'Đã hủy';
+  }
 
-if (response.status === 'success') {
-  progressBar.value = 100;
-  progressText.textContent = 'Hoàn thành';
-} else if (response.status === 'error') {
-  progressText.textContent = 'Có lỗi';
-} else {
-  progressText.textContent = 'Đã hủy';
-}
+  resultElement.textContent = JSON.stringify(response, null, 2);
 
-
-    resultElement.textContent = JSON.stringify(response, null, 2);
-
-    activeTaskId = null;
-    setRunning(false);
-  },
-);
+  activeTaskId = null;
+  setRunning(false);
+});
 
 worker.addEventListener('error', (event: ErrorEvent) => {
   resultElement.textContent = `Worker gặp lỗi: ${event.message}`;

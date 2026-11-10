@@ -3,6 +3,7 @@ import { defineConfig } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: true,
+  workers: 2,
   retries: 0,
   reporter: 'list',
   use: { baseURL: 'http://localhost:4173', channel: 'chrome', trace: 'retain-on-failure' },
@@ -14,7 +15,7 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      command: 'npm run build -w @dashboard/api && npm run start -w @dashboard/api',
+      command: 'node --import tsx tests/support/api-server.ts',
       url: 'http://localhost:3001/health',
       reuseExistingServer: false,
       timeout: 60_000,

@@ -1,5 +1,13 @@
 {
   "extends": "./tsconfig.base.json",
-  "compilerOptions": { "types": ["node"], "lib": ["ES2023", "DOM"] },
-  "include": ["vitest.config.ts", "playwright.config.ts", "tests/**/*.ts"]
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ES2023", "DOM"]
+  },
+  "include": [
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "tests/**/*.ts",
+    "playwright.atlas.config.ts"
+  ]
 }

@@ -1,14 +1,8 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  createMissingProposals,
-  type MissingFillRequest,
-} from './createMissingProposals.js';
+import { createMissingProposals, type MissingFillRequest } from './createMissingProposals.js';
 
-import {
-  applyMissingProposals,
-} from './applyMissingProposals.js';
+import { applyMissingProposals } from './applyMissingProposals.js';
 
 import {
   createDatasetHistory,
@@ -24,9 +18,7 @@ export interface MissingWorkflowResult {
   dataset: Dataset;
 }
 
-export function startMissingWorkflow(
-  dataset: Dataset,
-): DatasetHistory {
+export function startMissingWorkflow(dataset: Dataset): DatasetHistory {
   return createDatasetHistory(dataset);
 }
 
@@ -37,21 +29,11 @@ export function executeMissingWorkflow(
 ): MissingWorkflowResult {
   const currentDataset = getCurrentDataset(history);
 
-  const proposals = createMissingProposals(
-    currentDataset,
-    requests,
-  );
+  const proposals = createMissingProposals(currentDataset, requests);
 
-  const nextDataset = applyMissingProposals(
-    currentDataset,
-    proposals,
-    newVersionId,
-  );
+  const nextDataset = applyMissingProposals(currentDataset, proposals, newVersionId);
 
-  const nextHistory = pushDatasetVersion(
-    history,
-    nextDataset,
-  );
+  const nextHistory = pushDatasetVersion(history, nextDataset);
 
   return {
     history: nextHistory,
@@ -59,9 +41,7 @@ export function executeMissingWorkflow(
   };
 }
 
-export function undoMissingWorkflow(
-  history: DatasetHistory,
-): MissingWorkflowResult {
+export function undoMissingWorkflow(history: DatasetHistory): MissingWorkflowResult {
   const nextHistory = undoDataset(history);
 
   return {
@@ -70,9 +50,7 @@ export function undoMissingWorkflow(
   };
 }
 
-export function redoMissingWorkflow(
-  history: DatasetHistory,
-): MissingWorkflowResult {
+export function redoMissingWorkflow(history: DatasetHistory): MissingWorkflowResult {
   const nextHistory = redoDataset(history);
 
   return {

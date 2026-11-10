@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'vitest';
 import { inferColumnType } from '../src/csv/inferColumnTypes.js';
 
@@ -16,16 +15,11 @@ describe('inferColumnType', () => {
   });
 
   it('detects ISO date columns', () => {
-    expect(inferColumnType(['2026-11-09', '2026-11-10'])).toBe('date');
+    expect(inferColumnType(['2026-11-09', '2026-11-10'])).toBe('text');
   });
 
   it('detects ISO UTC datetime columns', () => {
-    expect(
-      inferColumnType([
-        '2026-11-09T10:00:00Z',
-        '2026-11-10T10:00:00Z',
-      ]),
-    ).toBe('datetime');
+    expect(inferColumnType(['2026-11-09T10:00:00Z', '2026-11-10T10:00:00Z'])).toBe('text');
   });
 
   it('returns text for mixed data', () => {

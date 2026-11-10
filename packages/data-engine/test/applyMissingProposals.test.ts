@@ -1,14 +1,9 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  createMissingProposals,
-} from '../src/missing/createMissingProposals.js';
+import { createMissingProposals } from '../src/missing/createMissingProposals.js';
 
-import {
-  applyMissingProposals,
-} from '../src/missing/applyMissingProposals.js';
+import { applyMissingProposals } from '../src/missing/applyMissingProposals.js';
 
 describe('applyMissingProposals', () => {
   const dataset: Dataset = {
@@ -30,11 +25,7 @@ describe('applyMissingProposals', () => {
       { columnId: 'c2', strategy: 'mean' },
     ]);
 
-    const result = applyMissingProposals(
-      dataset,
-      proposals,
-      'v2',
-    );
+    const result = applyMissingProposals(dataset, proposals, 'v2');
 
     expect(result.versionId).toBe('v2');
     expect(result.rows[1]?.cells).toEqual({
@@ -46,9 +37,7 @@ describe('applyMissingProposals', () => {
   it('does not mutate the original dataset', () => {
     const original = structuredClone(dataset);
 
-    const proposals = createMissingProposals(dataset, [
-      { columnId: 'c2', strategy: 'mean' },
-    ]);
+    const proposals = createMissingProposals(dataset, [{ columnId: 'c2', strategy: 'mean' }]);
 
     applyMissingProposals(dataset, proposals, 'v2');
 
@@ -56,9 +45,7 @@ describe('applyMissingProposals', () => {
   });
 
   it('rejects the same version ID', () => {
-    expect(() =>
-      applyMissingProposals(dataset, [], 'v1'),
-    ).toThrow('New version ID must differ');
+    expect(() => applyMissingProposals(dataset, [], 'v1')).toThrow('New version ID must differ');
   });
 
   it('rejects proposals for unknown rows', () => {
@@ -67,6 +54,7 @@ describe('applyMissingProposals', () => {
         dataset,
         [
           {
+            baseVersionId: 'v1',
             columnId: 'c2',
             columnName: 'Age',
             strategy: 'constant',
@@ -85,6 +73,7 @@ describe('applyMissingProposals', () => {
         dataset,
         [
           {
+            baseVersionId: 'v1',
             columnId: 'c2',
             columnName: 'Age',
             strategy: 'constant',
@@ -103,6 +92,7 @@ describe('applyMissingProposals', () => {
         dataset,
         [
           {
+            baseVersionId: 'v1',
             columnId: 'c2',
             columnName: 'Age',
             strategy: 'constant',

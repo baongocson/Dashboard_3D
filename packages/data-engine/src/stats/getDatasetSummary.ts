@@ -1,4 +1,3 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
 export interface DatasetSummary {
@@ -9,9 +8,7 @@ export interface DatasetSummary {
   nonMissingCellCount: number;
 }
 
-export function getDatasetSummary(
-  dataset: Dataset,
-): DatasetSummary {
+export function getDatasetSummary(dataset: Dataset): DatasetSummary {
   const rowCount = dataset.rows.length;
   const columnCount = dataset.columns.length;
   const cellCount = rowCount * columnCount;

@@ -1,9 +1,9 @@
-
 import type { Cell, Dataset } from '@dashboard/contracts';
 
 export type MissingFillStrategy = 'constant' | 'mean';
 
 export interface MissingFillProposal {
+  baseVersionId: string;
   columnId: string;
   columnName: string;
   strategy: MissingFillStrategy;
@@ -26,16 +26,12 @@ export function createMissingProposals(
 
   for (const request of requests) {
     if (processedColumns.has(request.columnId)) {
-      throw new Error(
-        `Duplicate fill request for column: ${request.columnId}`,
-      );
+      throw new Error(`Duplicate fill request for column: ${request.columnId}`);
     }
 
     processedColumns.add(request.columnId);
 
-    const column = dataset.columns.find(
-      (item) => item.id === request.columnId,
-    );
+    const column = dataset.columns.find((item) => item.id === request.columnId);
 
     if (column === undefined) {
       throw new Error(`Column not found: ${request.columnId}`);
@@ -53,9 +49,7 @@ export function createMissingProposals(
 
     if (request.strategy === 'mean') {
       if (column.type !== 'number') {
-        throw new Error(
-          `Mean strategy requires a numeric column: ${column.id}`,
-        );
+        throw new Error(`Mean strategy requires a numeric column: ${column.id}`);
       }
 
       let mean = 0;
@@ -66,22 +60,18 @@ export function createMissingProposals(
 
         if (typeof value === 'number') {
           count += 1;
-          mean += (value - mean) / count;
+          mean = mean * ((count - 1) / count) + value / count;
         }
       }
 
       if (count === 0) {
-        throw new Error(
-          `Cannot calculate mean for column: ${column.id}`,
-        );
+        throw new Error(`Cannot calculate mean for column: ${column.id}`);
       }
 
       proposedValue = mean;
     } else {
       if (request.value === undefined || request.value === null) {
-        throw new Error(
-          `Constant fill requires a non-null value: ${column.id}`,
-        );
+        throw new Error(`Constant fill requires a non-null value: ${column.id}`);
       }
 
       const value = request.value;
@@ -89,20 +79,17 @@ export function createMissingProposals(
       const validType =
         (column.type === 'number' && typeof value === 'number') ||
         (column.type === 'boolean' && typeof value === 'boolean') ||
-        (column.type !== 'number' &&
-          column.type !== 'boolean' &&
-          typeof value === 'string');
+        (column.type !== 'number' && column.type !== 'boolean' && typeof value === 'string');
 
       if (!validType) {
-        throw new Error(
-          `Invalid fill value for column: ${column.id}`,
-        );
+        throw new Error(`Invalid fill value for column: ${column.id}`);
       }
 
       proposedValue = value;
     }
 
     proposals.push({
+      baseVersionId: dataset.versionId,
       columnId: column.id,
       columnName: column.name,
       strategy: request.strategy,

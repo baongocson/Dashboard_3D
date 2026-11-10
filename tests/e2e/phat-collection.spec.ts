@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures';
 
 // Phat UI: production tests. No CSV Worker is connected yet.
 // These tests verify the visible UI and never pretend to import a CSV.
@@ -11,19 +11,19 @@ test('Collection: no dataset means Next and import are disabled', async ({ page 
   await expect(page.getByRole('heading', { name: 'Chưa có dữ liệu' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next — Pre-processing' })).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Phân tích dữ liệu' })).toBeDisabled();
-  await expect(page.getByText('Chưa kết nối CSV Worker.', { exact: false })).toBeVisible();
 });
 
-test('Collection: a valid CSV can be selected but cannot be falsely imported', async ({ page }) => {
+test('Collection: a valid CSV imports through Worker and persists locally', async ({ page }) => {
   await page.locator('input[type="file"]').setInputFiles({
     name: 'students.csv',
     mimeType: 'text/csv',
     buffer: Buffer.from('name,age\nAn,20\nBinh,21\n'),
   });
   await expect(page.getByText('students.csv', { exact: false })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Phân tích dữ liệu' })).toBeDisabled();
-  await expect(page.getByRole('button', { name: 'Next — Pre-processing' })).toBeDisabled();
-  await expect(page.getByRole('heading', { name: 'Chưa có dữ liệu' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Phân tích dữ liệu' })).toBeEnabled();
+  await page.getByRole('button', { name: 'Phân tích dữ liệu' }).click();
+  await expect(page.getByRole('button', { name: 'Next — Pre-processing' })).toBeEnabled();
+  await expect(page.getByText('Local: Đã lưu trên máy')).toBeVisible();
 });
 
 test('Collection: reject non-CSV filenames', async ({ page }) => {

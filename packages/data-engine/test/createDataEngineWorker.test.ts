@@ -1,31 +1,17 @@
-
-
 import { describe, expect, it, vi } from 'vitest';
 
-import type {
-  WorkerRequest,
-  WorkerResponse,
-} from '../src/worker/workerMessages.js';
+import type { WorkerRequest, WorkerResponse } from '../src/worker/workerMessages.js';
 
-import {
-  sendWorkerRequest,
-} from '../src/worker/createDataEngineWorker.js';
+import { sendWorkerRequest } from '../src/worker/createDataEngineWorker.js';
 
 describe('sendWorkerRequest', () => {
   it('sends a request and receives the matching response', () => {
-    let messageHandler:
-      | ((event: MessageEvent<WorkerResponse>) => void)
-      | undefined;
+    let messageHandler: ((event: MessageEvent<WorkerResponse>) => void) | undefined;
 
     const postMessage = vi.fn();
 
     const addEventListener = vi.fn(
-      (
-        type: string,
-        listener: (
-          event: MessageEvent<WorkerResponse>
-        ) => void,
-      ): void => {
+      (type: string, listener: (event: MessageEvent<WorkerResponse>) => void): void => {
         if (type === 'message') {
           messageHandler = listener;
         }
@@ -45,20 +31,14 @@ describe('sendWorkerRequest', () => {
       type: 'dataset-summary',
       dataset: {
         versionId: 'v1',
-        columns: [
-          { id: 'c1', name: 'Age', type: 'number' },
-        ],
+        columns: [{ id: 'c1', name: 'Age', type: 'number' }],
         rows: [],
       },
     };
 
     const onResponse = vi.fn();
 
-    sendWorkerRequest(
-      worker,
-      request,
-      onResponse,
-    );
+    sendWorkerRequest(worker, request, onResponse);
 
     expect(postMessage).toHaveBeenCalledWith(request);
 
@@ -79,9 +59,7 @@ describe('sendWorkerRequest', () => {
       throw new Error('Message handler was not registered');
     }
 
-    messageHandler(
-      new MessageEvent('message', { data: response }),
-    );
+    messageHandler(new MessageEvent('message', { data: response }));
 
     expect(onResponse).toHaveBeenCalledWith(response);
     expect(removeEventListener).toHaveBeenCalledOnce();

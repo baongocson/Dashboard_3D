@@ -1,22 +1,12 @@
-
 import type { Dataset } from '@dashboard/contracts';
 
-import type {
-  DatasetSummary,
-} from '../stats/getDatasetSummary.js';
+import type { DatasetSummary } from '../stats/getDatasetSummary.js';
 
-import type {
-  ColumnStatistics,
-} from '../stats/getColumnStatistics.js';
+import type { ColumnStatistics } from '../stats/getColumnStatistics.js';
 
-import type {
-  MissingValuesReport,
-} from '../missing/detectMissingValues.js';
+import type { MissingValuesReport } from '../missing/detectMissingValues.js';
 
-export type WorkerTaskType =
-  | 'dataset-summary'
-  | 'column-statistics'
-  | 'missing-values';
+export type WorkerTaskType = 'dataset-summary' | 'column-statistics' | 'missing-values';
 
 export type WorkerRequest =
   | {
@@ -61,7 +51,6 @@ export type WorkerResponse =
       message: string;
     };
 
-
 export interface WorkerProgress {
   taskId: string;
   status: 'progress';
@@ -80,7 +69,6 @@ export interface WorkerCancelledResponse {
   status: 'cancelled';
 }
 
-
 export interface WorkerChunkRequest {
   taskId: string;
   type: 'process-chunks';
@@ -97,13 +85,7 @@ export interface WorkerChunkSuccess {
   };
 }
 
-export type WorkerRuntimeRequest =
-  | WorkerRequest
-  | WorkerChunkRequest
-  | WorkerCancelRequest;
+export type WorkerRuntimeRequest = WorkerRequest | WorkerChunkRequest | WorkerCancelRequest;
 
 export type WorkerRuntimeResponse =
-  | WorkerResponse
-  | WorkerChunkSuccess
-  | WorkerProgress
-  | WorkerCancelledResponse;
+  WorkerResponse | WorkerChunkSuccess | WorkerProgress | WorkerCancelledResponse;

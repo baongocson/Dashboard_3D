@@ -1,4 +1,3 @@
-
 export interface WorkerTaskManager {
   startTask: (taskId: string) => AbortSignal;
   cancelTask: (taskId: string) => boolean;

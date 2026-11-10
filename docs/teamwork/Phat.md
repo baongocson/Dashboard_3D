@@ -17,15 +17,15 @@
 
 ## 2. Kết quả kiểm tra
 
-| Hạng mục | Kết quả |
-|---|---|
-| ESLint (`npm run lint`) | Đạt ở lần chạy gần nhất |
-| TypeScript (`npm run typecheck`) | Đạt ở lần chạy gần nhất |
-| Unit/API (`npm test`) | 24/24 đạt |
-| Build (`npm run build`) | Đạt |
-| E2E production (`npm run test:e2e`) | 8/8 đạt |
-| E2E development (`npx playwright test --config=tests/dev-e2e/playwright.phat-dev.config.mjs`) | 6/6 đạt |
-| Responsive | Đã kiểm tra thủ công trên màn hình nhỏ; chưa có bộ kiểm thử responsive tự động |
+| Hạng mục                                                                                      | Kết quả                                                                        |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| ESLint (`npm run lint`)                                                                       | Đạt ở lần chạy gần nhất                                                        |
+| TypeScript (`npm run typecheck`)                                                              | Đạt ở lần chạy gần nhất                                                        |
+| Unit/API (`npm test`)                                                                         | 24/24 đạt                                                                      |
+| Build (`npm run build`)                                                                       | Đạt                                                                            |
+| E2E production (`npm run test:e2e`)                                                           | 8/8 đạt                                                                        |
+| E2E development (`npx playwright test --config=tests/dev-e2e/playwright.phat-dev.config.mjs`) | 6/6 đạt                                                                        |
+| Responsive                                                                                    | Đã kiểm tra thủ công trên màn hình nhỏ; chưa có bộ kiểm thử responsive tự động |
 
 **Phạm vi xác nhận:** Các kết quả trên áp dụng cho bộ khung, dữ liệu mẫu và các trường hợp đã viết test; không chứng minh chức năng nhập CSV, xử lý 3D hay lưu/đồng bộ thực tế đã hoàn tất.
 

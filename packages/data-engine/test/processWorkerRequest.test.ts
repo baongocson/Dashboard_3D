@@ -1,17 +1,12 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  processWorkerRequest,
-} from '../src/worker/processWorkerRequest.js';
+import { processWorkerRequest } from '../src/worker/processWorkerRequest.js';
 
 describe('processWorkerRequest', () => {
   const dataset: Dataset = {
     versionId: 'v1',
-    columns: [
-      { id: 'c1', name: 'Age', type: 'number' },
-    ],
+    columns: [{ id: 'c1', name: 'Age', type: 'number' }],
     rows: [
       { id: 'r1', cells: { c1: 20 } },
       { id: 'r2', cells: { c1: null } },
@@ -29,10 +24,7 @@ describe('processWorkerRequest', () => {
     expect(response.taskId).toBe('task-1');
     expect(response.status).toBe('success');
 
-    if (
-      response.status === 'success' &&
-      response.type === 'dataset-summary'
-    ) {
+    if (response.status === 'success' && response.type === 'dataset-summary') {
       expect(response.result.rowCount).toBe(3);
       expect(response.result.columnCount).toBe(1);
     }
@@ -48,10 +40,7 @@ describe('processWorkerRequest', () => {
 
     expect(response.status).toBe('success');
 
-    if (
-      response.status === 'success' &&
-      response.type === 'column-statistics'
-    ) {
+    if (response.status === 'success' && response.type === 'column-statistics') {
       expect(response.result.mean).toBe(25);
       expect(response.result.missingCount).toBe(1);
     }
@@ -66,10 +55,7 @@ describe('processWorkerRequest', () => {
 
     expect(response.status).toBe('success');
 
-    if (
-      response.status === 'success' &&
-      response.type === 'missing-values'
-    ) {
+    if (response.status === 'success' && response.type === 'missing-values') {
       expect(response.result.totalMissingCells).toBe(1);
     }
   });

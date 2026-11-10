@@ -95,7 +95,7 @@ export function registerAuthModule(app: FastifyInstance, options: AuthModuleOpti
     const extend = request.headers[SESSION_ACTIVITY_HEADER] !== 'background';
     let result;
     try {
-      result = await service.authenticate(request.cookies[SESSION_COOKIE], extend);
+      result = await service.authenticate(request.cookies[SESSION_COOKIE], false);
     } catch (error: unknown) {
       if (error instanceof ApiError) clearSessionCookie(reply);
       throw error;
@@ -105,6 +105,7 @@ export function registerAuthModule(app: FastifyInstance, options: AuthModuleOpti
       if (typeof header !== 'string' || !safeEqual(header, result.session.csrfToken))
         throw new ApiError('CSRF_INVALID', 'Missing or invalid CSRF token');
     }
+    if (extend) await service.authenticate(request.cookies[SESSION_COOKIE], true);
     request.auth = {
       userId: result.user.id,
       sessionId: result.session.id,

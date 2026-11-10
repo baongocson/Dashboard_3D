@@ -162,6 +162,8 @@ export const versionSchema = z.strictObject({
   source: z.enum(['import', 'apply', 'sync-conflict']),
 });
 export const historySchema = z.strictObject({
+  sequence: z.number().int().nonnegative().optional(),
+  createdAt: z.iso.datetime().optional(),
   operationId: idSchema,
   kind: z.enum(['apply', 'undo']),
   fromVersionId: idSchema,
@@ -178,7 +180,14 @@ export const outboxSchema = z.strictObject({
   kind: z.enum(['import', 'apply', 'undo', 'save-session']),
   baseRevision: z.number().int().nonnegative().nullable(),
   dependsOn: z.array(idSchema),
-  status: z.enum(['pending', 'uploading', 'conflict','synced', 'auth-required', 'retryable-error']),
+  status: z.enum([
+    'pending',
+    'uploading',
+    'conflict',
+    'synced',
+    'auth-required',
+    'retryable-error',
+  ]),
 });
 export const applyPublicationSchema = z
   .strictObject({
@@ -266,6 +275,76 @@ export const projectSchema = z.strictObject({
   sessionId: idSchema,
 });
 
+export const projectSnapshotSchema = z
+  .object({
+    project: projectSchema,
+    session: sessionSchema,
+    versions: z.array(versionSchema).min(1),
+    manifests: z.array(manifestSchema).min(1),
+    history: z.array(historySchema),
+  })
+  .superRefine((snapshot, context) => {
+    const { project, session, versions, manifests } = snapshot;
+    const versionIds = new Set(versions.map((v) => v.id));
+    if (
+      session.projectId !== project.id ||
+      session.datasetId !== project.datasetId ||
+      session.id !== project.sessionId ||
+      !versions.some((v) => v.id === session.currentVersionId) ||
+      versions.some(
+        (v) =>
+          v.projectId !== project.id ||
+          v.datasetId !== project.datasetId ||
+          !manifests.some((m) => m.id === v.manifestId) ||
+          (v.parentVersionId !== null && !versionIds.has(v.parentVersionId)),
+      ) ||
+      snapshot.history.some(
+        (h) => !versionIds.has(h.fromVersionId) || !versionIds.has(h.toVersionId),
+      ) ||
+      new Set(versions.map((v) => v.id)).size !== versions.length ||
+      new Set(manifests.map((m) => m.id)).size !== manifests.length
+    )
+      context.addIssue({ code: 'custom', message: 'Invalid project snapshot references' });
+    if (typeof session.confirmedConfiguration.workspace === 'string') {
+      try {
+        const workspace = z
+          .object({
+            sourceVersionId: idSchema,
+            chartVersions: z.record(z.string(), idSchema),
+            undo: z.array(idSchema),
+            chartResults: z.record(z.string(), z.object({ versionId: idSchema })).default({}),
+          })
+          .parse(JSON.parse(session.confirmedConfiguration.workspace));
+        if (
+          [
+            workspace.sourceVersionId,
+            ...Object.values(workspace.chartVersions),
+            ...workspace.undo,
+            ...Object.values(workspace.chartResults).map((c) => c.versionId),
+          ].some((id) => !versionIds.has(id))
+        )
+          context.addIssue({
+            code: 'custom',
+            message: 'Workspace references unpublished versions',
+          });
+      } catch {
+        context.addIssue({ code: 'custom', message: 'Invalid workspace metadata' });
+      }
+    }
+  });
+export type ProjectSnapshot = z.infer<typeof projectSnapshotSchema>;
+export const syncCommitSchema = z.object({
+  operationId: idSchema,
+  baseRevision: z.number().int().nonnegative(),
+  snapshot: projectSnapshotSchema,
+});
+export const syncChunkSchema = z.object({
+  id: idSchema,
+  bytes: z.number().int().positive().max(1_048_576),
+  sha256: z.string().regex(/^[a-f0-9]{64}$/u),
+  data: z.string().max(1_398_104),
+});
+
 // Foundation messages only. Dataset jobs are added with their implementation.
 export const workerRequestSchema = z.strictObject({ type: z.literal('ping'), jobId: idSchema });
 export const workerResponseSchema = z.discriminatedUnion('type', [
@@ -308,6 +387,7 @@ export const usernameSchema = z
 // Never trimmed, case-folded or normalized.
 export const passwordSchema = z
   .string()
+  .refine((value) => !/[\uD800-\uDFFF]/u.test(value), { message: 'Invalid Unicode in password' })
   .refine((value) => countCodePoints(value) >= PASSWORD_MIN_CODE_POINTS, {
     message: `Password must have at least ${String(PASSWORD_MIN_CODE_POINTS)} characters`,
   })

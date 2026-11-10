@@ -1,21 +1,13 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import type {
-  WorkerRequest,
-  WorkerResponse,
-} from '../src/worker/workerMessages.js';
+import type { WorkerRequest, WorkerResponse } from '../src/worker/workerMessages.js';
 
 describe('worker message contracts', () => {
   const dataset: Dataset = {
     versionId: 'v1',
-    columns: [
-      { id: 'c1', name: 'Age', type: 'number' },
-    ],
-    rows: [
-      { id: 'r1', cells: { c1: 20 } },
-    ],
+    columns: [{ id: 'c1', name: 'Age', type: 'number' }],
+    rows: [{ id: 'r1', cells: { c1: 20 } }],
   };
 
   it('supports dataset summary requests', () => {

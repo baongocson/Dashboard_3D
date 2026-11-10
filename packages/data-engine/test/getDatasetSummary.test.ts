@@ -1,10 +1,7 @@
-
 import { describe, expect, it } from 'vitest';
 import type { Dataset } from '@dashboard/contracts';
 
-import {
-  getDatasetSummary,
-} from '../src/stats/getDatasetSummary.js';
+import { getDatasetSummary } from '../src/stats/getDatasetSummary.js';
 
 describe('getDatasetSummary', () => {
   it('counts rows, columns, and cells', () => {
@@ -54,9 +51,7 @@ describe('getDatasetSummary', () => {
   it('supports datasets with no rows', () => {
     const dataset: Dataset = {
       versionId: 'v3',
-      columns: [
-        { id: 'c1', name: 'Name', type: 'text' },
-      ],
+      columns: [{ id: 'c1', name: 'Name', type: 'text' }],
       rows: [],
     };
 

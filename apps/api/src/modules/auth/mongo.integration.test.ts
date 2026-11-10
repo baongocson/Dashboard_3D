@@ -1,3 +1,4 @@
+import { setServers } from 'node:dns';
 // Real MongoDB integration. Runs only when MONGODB_TEST_URI is set. When skipped,
 // MongoDB/Atlas account storage is NOT verified.
 // - Without MONGODB_TEST_DB_NAME: creates a uniquely named database and DROPS it afterwards
@@ -12,7 +13,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../../app.js';
 import { createMongoAuthStores } from './stores.js';
 
-const uri = process.env.MONGODB_TEST_URI;
+if (process.env.MONGODB_TEST_DNS) setServers(process.env.MONGODB_TEST_DNS.split(','));
+const uri = process.env.MONGODB_TEST_URI?.trim() || undefined;
 const ORIGIN = 'http://localhost:4173';
 const PASSWORD = 'correct horse battery';
 

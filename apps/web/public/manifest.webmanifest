@@ -1,0 +1,9 @@
+{
+  "name": "Dashboard 3D",
+  "short_name": "Dashboard 3D",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7f4",
+  "theme_color": "#1f6655",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

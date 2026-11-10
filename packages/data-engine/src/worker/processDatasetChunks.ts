@@ -1,4 +1,3 @@
-
 import type { Dataset } from '@dashboard/contracts';
 import type { WorkerProgress } from './workerMessages.js';
 
@@ -22,12 +21,7 @@ export async function processDatasetChunks(
   dataset: Dataset,
   options: ChunkProcessingOptions,
 ): Promise<void> {
-  const {
-    chunkSize,
-    onProgress,
-    processChunk,
-    signal,
-  } = options;
+  const { chunkSize, onProgress, processChunk, signal } = options;
 
   if (!Number.isSafeInteger(chunkSize) || chunkSize <= 0) {
     throw new Error('chunkSize must be a positive safe integer');

@@ -83,15 +83,15 @@
 
 Kết quả:
 
-| Hạng mục | Kết quả |
-|---|---|
-| TypeScript Typecheck | PASS |
-| ESLint | PASS |
+| Hạng mục               | Kết quả      |
+| ---------------------- | ------------ |
+| TypeScript Typecheck   | PASS         |
+| ESLint                 | PASS         |
 | Unit/Integration Tests | 141/141 PASS |
-| Test Files | 26/26 PASS |
-| Frontend Build | PASS |
-| Backend Build | PASS |
-| Git Whitespace Check | PASS |
+| Test Files             | 26/26 PASS   |
+| Frontend Build         | PASS         |
+| Backend Build          | PASS         |
+| Git Whitespace Check   | PASS         |
 
 Lưu ý: số lượng bài test trên là kết quả kiểm tra toàn bộ repository tại thời điểm báo cáo.
 

@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'vitest';
 import { detectDelimiter } from '../src/csv/detectDelimiter.js';
 
@@ -16,9 +15,7 @@ describe('detectDelimiter', () => {
   });
 
   it('ignores delimiters inside quoted values', () => {
-    expect(
-      detectDelimiter('name;description\nAn;"hello, world"'),
-    ).toBe(';');
+    expect(detectDelimiter('name;description\nAn;"hello, world"')).toBe(';');
   });
 
   it('defaults to comma when no delimiter is found', () => {
@@ -26,10 +23,6 @@ describe('detectDelimiter', () => {
   });
 
   it('supports multiline quoted fields', () => {
-    expect(
-      detectDelimiter(
-        'name;note\nAn;"first line\nsecond, line"\nBinh;ok',
-      ),
-    ).toBe(';');
+    expect(detectDelimiter('name;note\nAn;"first line\nsecond, line"\nBinh;ok')).toBe(';');
   });
 });

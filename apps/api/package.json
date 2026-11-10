@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --import tsx --watch src/server.ts",
+    "dev": "node --env-file-if-exists=../../.env --import tsx --watch src/server.ts",
     "build": "node ../../node_modules/typescript/bin/tsc -p tsconfig.build.json",
-    "start": "node dist/server.js"
+    "start": "node --env-file-if-exists=../../.env dist/server.js"
   },
   "dependencies": {
     "@dashboard/contracts": "0.1.0",

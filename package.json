@@ -21,7 +21,8 @@
     "format": "node node_modules/prettier/bin/prettier.cjs --write .",
     "test": "node node_modules/vitest/vitest.mjs run",
     "test:e2e": "node node_modules/@playwright/test/cli.js test",
-    "check": "npm run typecheck && npm run lint && npm test && npm run build"
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "test:e2e:atlas": "node --env-file=.env node_modules/@playwright/test/cli.js test --config playwright.atlas.config.ts"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
@@ -29,6 +30,7 @@
     "@types/node": "^24.0.0",
     "concurrently": "10.0.6",
     "eslint": "10.14.0",
+    "fake-indexeddb": "^6.2.8",
     "prettier": "^3.6.0",
     "tsx": "4.23.15",
     "typescript": "5.9.3",

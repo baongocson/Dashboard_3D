@@ -1,4 +1,3 @@
-
 import { describe, expect, it } from 'vitest';
 import { datasetSchema } from '@dashboard/contracts';
 
@@ -14,9 +13,7 @@ describe('importCsv integration', () => {
   };
 
   it('imports a semicolon CSV automatically', async () => {
-    const file = new Blob([
-      'id;name;age;active\n001;An;20;true\n002;Binh;21;false',
-    ]);
+    const file = new Blob(['id;name;age;active\n001;An;20;true\n002;Binh;21;false']);
 
     const dataset = await importCsv(file, options, 'version-1');
 
@@ -59,60 +56,40 @@ describe('importCsv integration', () => {
   it('rejects CSV with duplicate headers', async () => {
     const file = new Blob(['name,name\nAn,Binh']);
 
-    await expect(
-      importCsv(file, options, 'version-4'),
-    ).rejects.toThrow('Duplicate column names');
+    await expect(importCsv(file, options, 'version-4')).rejects.toThrow('Tên cột rỗng hoặc trùng');
   });
 
   it('rejects invalid UTF-8 content', async () => {
-    const file = new Blob([
-      new Uint8Array([0xc3, 0x28]),
-    ]);
+    const file = new Blob([new Uint8Array([0xc3, 0x28])]);
 
-    await expect(
-      importCsv(file, options, 'version-5'),
-    ).rejects.toThrow('Invalid UTF-8 encoding');
+    await expect(importCsv(file, options, 'version-5')).rejects.toThrow('Invalid UTF-8 encoding');
   });
 
-it('preserves identifiers and unsafe integers as text', async () => {
-  const file = new Blob([
-    'id,value\n001,9007199254740993\n002,9007199254740995',
-  ]);
+  it('preserves identifiers and unsafe integers as text', async () => {
+    const file = new Blob(['id,value\n001,9007199254740993\n002,9007199254740995']);
 
-  const dataset = await importCsv(file, options, 'version-6');
+    const dataset = await importCsv(file, options, 'version-6');
 
-  expect(dataset.columns.map((column) => column.type)).toEqual([
-    'text',
-    'text',
-  ]);
+    expect(dataset.columns.map((column) => column.type)).toEqual(['text', 'text']);
 
-  expect(dataset.rows[0]?.cells['column-1']).toBe('001');
-  expect(dataset.rows[0]?.cells['column-2']).toBe(
-    '9007199254740993',
-  );
-});
+    expect(dataset.rows[0]?.cells['column-1']).toBe('001');
+    expect(dataset.rows[0]?.cells['column-2']).toBe('9007199254740993');
+  });
 
-it('rejects rows with missing or extra columns', async () => {
-  const file = new Blob(['a,b\n1,2\n3,4,5']);
+  it('rejects rows with missing or extra columns', async () => {
+    const file = new Blob(['a,b\n1,2\n3,4,5']);
 
-  await expect(
-    importCsv(file, options, 'version-7'),
-  ).rejects.toThrow(
-    'Line 3: expected 2 columns, received 3',
-  );
-});
+    await expect(importCsv(file, options, 'version-7')).rejects.toThrow(
+      'Line 3: expected 2 columns, received 3',
+    );
+  });
 
-it('preserves quoted multiline fields', async () => {
-  const file = new Blob([
-    'id;note\n001;"first line\nsecond, line"\n002;ok',
-  ]);
+  it('preserves quoted multiline fields', async () => {
+    const file = new Blob(['id;note\n001;"first line\nsecond, line"\n002;ok']);
 
-  const dataset = await importCsv(file, options, 'version-8');
+    const dataset = await importCsv(file, options, 'version-8');
 
-  expect(dataset.rows).toHaveLength(2);
-  expect(dataset.rows[0]?.cells['column-2']).toBe(
-    'first line\nsecond, line',
-  );
-});
-
+    expect(dataset.rows).toHaveLength(2);
+    expect(dataset.rows[0]?.cells['column-2']).toBe('first line\nsecond, line');
+  });
 });

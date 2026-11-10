@@ -1,8 +1,4 @@
-
-import {
-  parseCsv,
-  type CsvDelimiter,
-} from './parseCsv.js';
+import { parseCsv, type CsvDelimiter } from './parseCsv.js';
 
 const DELIMITERS: readonly CsvDelimiter[] = [',', ';', '\t'];
 
@@ -26,9 +22,7 @@ export function detectDelimiter(input: string): CsvDelimiter {
         continue;
       }
 
-      const consistentRows = columnCounts.filter(
-        (count) => count === firstCount,
-      ).length;
+      const consistentRows = columnCounts.filter((count) => count === firstCount).length;
 
       const score = consistentRows * firstCount;
 

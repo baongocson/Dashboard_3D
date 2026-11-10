@@ -19,11 +19,15 @@ export function defaultCsvOptions(): CsvOptions {
 }
 
 // UI validation only. It does NOT read, decode or parse a CSV.
-export function validateCsvInput(file: Pick<File, 'name' | 'size'> | null, options: CsvOptions): string | null {
+export function validateCsvInput(
+  file: Pick<File, 'name' | 'size'> | null,
+  options: CsvOptions,
+): string | null {
   if (!file) return 'Hãy chọn một tệp CSV.';
   if (!file.name.toLowerCase().endsWith('.csv')) return 'Chỉ nhận tệp có đuôi .csv.';
   if (file.size === 0) return 'Tệp đang trống.';
-  if (file.size > MAX_CSV_BYTES) return `Tệp vượt giới hạn ${MAX_CSV_BYTES.toLocaleString('vi-VN')} byte.`;
+  if (file.size > MAX_CSV_BYTES)
+    return `Tệp vượt giới hạn ${MAX_CSV_BYTES.toLocaleString('vi-VN')} byte.`;
   const checkedFile = csvFileSchema.safeParse({ name: file.name, bytes: file.size });
   if (!checkedFile.success) return 'Thông tin tệp không hợp lệ.';
   if (!csvOptionsSchema.safeParse(options).success) return 'Cấu hình đọc CSV không hợp lệ.';

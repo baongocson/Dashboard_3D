@@ -1,4 +1,3 @@
-
 import { MAX_CSV_BYTES } from '@dashboard/contracts';
 
 export class CsvFileError extends Error {
@@ -14,9 +13,7 @@ export async function readCsvFile(file: Blob): Promise<string> {
   }
 
   if (file.size > MAX_CSV_BYTES) {
-    throw new CsvFileError(
-      `CSV file exceeds the ${String(MAX_CSV_BYTES)} byte limit`,
-    );
+    throw new CsvFileError(`CSV file exceeds the ${String(MAX_CSV_BYTES)} byte limit`);
   }
 
   const bytes = await file.arrayBuffer();
