@@ -11,19 +11,19 @@ type SessionControlsProps = {
 };
 
 const storageLabels: Record<StorageStatus, string> = {
-  'not-connected': 'Chưa kết nối lưu local',
-  unsaved: 'Chưa lưu',
-  'saved-local': 'Đã lưu trên máy',
-  saving: 'Đang lưu',
-  failed: 'Lưu lỗi',
+  'not-connected': 'No Session',
+  unsaved: 'Unsaved',
+  'saved-local': 'Saved Locally',
+  saving: 'Saving',
+  failed: 'Save Failed',
 };
 const syncLabels: Record<SyncStatus, string> = {
-  'not-connected': 'Chưa kết nối đồng bộ',
-  offline: 'Đang offline',
-  pending: 'Chờ đồng bộ',
-  syncing: 'Đang đồng bộ',
-  synced: 'Đã đồng bộ server',
-  failed: 'Đồng bộ lỗi',
+  'not-connected': 'Not Connected',
+  offline: 'Offline',
+  pending: 'Pending Sync',
+  syncing: 'Syncing',
+  synced: 'Synced',
+  failed: 'Sync Failed',
 };
 
 export function SessionControls({
@@ -45,9 +45,7 @@ export function SessionControls({
       // Storage adapter must only resolve when the durable local commit has completed.
       await callback();
     } catch (caught: unknown) {
-      setError(
-        caught instanceof Error ? caught.message : 'Không thể lưu phiên. Vẫn ở trang hiện tại.',
-      );
+      setError(caught instanceof Error ? caught.message : 'Could not save the session.');
     } finally {
       setRunning(null);
     }
@@ -55,8 +53,8 @@ export function SessionControls({
 
   return (
     <div className="session-controls">
-      <div className="session-statuses" role="group" aria-label="Trạng thái lưu và đồng bộ">
-        <span className="status-text">Local: {storageLabels[storageStatus]}</span>
+      <div className="session-statuses" role="group" aria-label="Storage and Sync Status">
+        <span className="status-text">Storage: {storageLabels[storageStatus]}</span>
         <span className="status-text">Sync: {syncLabels[syncStatus]}</span>
       </div>
       <button
@@ -67,7 +65,7 @@ export function SessionControls({
           void run('save');
         }}
       >
-        Lưu phiên
+        Save Session
       </button>
       <button
         type="button"
@@ -77,7 +75,7 @@ export function SessionControls({
           void run('exit');
         }}
       >
-        Thoát phiên
+        Close Session
       </button>
       {error && (
         <span className="header-error" role="alert">

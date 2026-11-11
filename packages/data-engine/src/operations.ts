@@ -7,8 +7,19 @@ const missingPlanSchema = z.object({
   method: z.enum(['fill', 'mean', 'median', 'mode', 'forward', 'backward', 'interpolate']),
   value: cellSchema.default(null),
 });
+const replacementSchema = z.object({ from: cellSchema, to: cellSchema });
+const cleaningPlanSchema = z.object({
+  columnId: z.string(),
+  trim: z.boolean().default(false),
+  stripHtml: z.boolean().default(false),
+  convert: z.enum(['keep', 'number', 'text', 'boolean', 'date', 'datetime']).default('keep'),
+  replacements: z.array(replacementSchema).default([]),
+});
 export const operationSchema = z.object({
   method: z.enum([
+    'replace',
+    'cleaning-batch',
+    'edit-row',
     'fill',
     'mean',
     'median',
@@ -44,6 +55,10 @@ export const operationSchema = z.object({
     'datetime',
   ]),
   columnIds: z.array(z.string().min(1)),
+  values: z.record(z.string(), cellSchema).default({}),
+  replacements: z.array(replacementSchema).default([]),
+  cleaningPlans: z.array(cleaningPlanSchema).default([]),
+  orders: z.record(z.string(), z.array(z.string())).default({}),
   rowId: z.string().nullable().default(null),
   value: cellSchema.default(null),
   parameter: z.number().default(1.5),
@@ -205,6 +220,41 @@ function fitLambda(values: number[]): number {
   return (left + right) / 2;
 }
 
+function describeChange(
+  source: Dataset,
+  result: Dataset,
+  configuration: Operation,
+): OperationPreview {
+  const examples: OperationPreview['examples'] = [];
+  let cells = 0;
+  const originalRows = new Map(source.rows.map((row) => [row.id, row]));
+  for (const row of result.rows) {
+    const original = originalRows.get(row.id);
+    for (const column of result.columns) {
+      const before = original?.cells[column.id] ?? null,
+        after = row.cells[column.id] ?? null;
+      if (!Object.is(before, after)) {
+        cells++;
+        if (examples.length < 20)
+          examples.push({ rowId: row.id, columnId: column.id, before, after });
+      }
+    }
+  }
+  const changedColumns = result.columns.filter(
+    (c) => source.columns.find((old) => old.id === c.id)?.type !== c.type,
+  ).length;
+  return {
+    baseVersionId: source.versionId,
+    fingerprint: JSON.stringify(configuration),
+    configuration,
+    dataset: result,
+    changes: { cells, rows: 0, columns: changedColumns },
+    examples: examples.slice(0, 20),
+    warnings: [],
+    parameters: {},
+  };
+}
+
 export function previewOperation(
   input: Dataset,
   rawConfig: unknown,
@@ -213,6 +263,108 @@ export function previewOperation(
   const source = datasetSchema.parse(input);
   const config = operationSchema.parse(rawConfig);
   if (versionId === source.versionId || !versionId) throw new Error('Cần phiên bản kết quả mới.');
+  if (config.method === 'replace') {
+    if (config.rowId && !source.rows.some((row) => row.id === config.rowId))
+      throw new Error('Không tìm thấy dòng.');
+    if (!config.replacements.length) throw new Error('Thêm ít nhất một cặp giá trị thay thế.');
+    if (
+      !config.columnIds.length ||
+      new Set(config.columnIds).size !== config.columnIds.length ||
+      config.columnIds.some((id) => !source.columns.some((c) => c.id === id))
+    )
+      throw new Error('Chọn cột hợp lệ.');
+    if (
+      new Set(config.replacements.map((r) => JSON.stringify(r.from))).size !==
+      config.replacements.length
+    )
+      throw new Error('Giá trị cần thay không được trùng.');
+    const result = datasetSchema.parse({
+      ...source,
+      versionId,
+      rows: source.rows.map((row) => ({
+        ...row,
+        cells: Object.fromEntries(
+          source.columns.map((c) => {
+            const before = row.cells[c.id] ?? null;
+            const pair =
+              config.columnIds.includes(c.id) && (!config.rowId || config.rowId === row.id)
+                ? config.replacements.find((r) => Object.is(r.from, before))
+                : undefined;
+            return [c.id, pair ? pair.to : before];
+          }),
+        ),
+      })),
+    });
+    return describeChange(source, result, config);
+  }
+  if (config.method === 'cleaning-batch') {
+    if (
+      !config.cleaningPlans.length ||
+      new Set(config.cleaningPlans.map((p) => p.columnId)).size !== config.cleaningPlans.length
+    )
+      throw new Error('Cấu hình ít nhất một cột.');
+    let combined = source;
+    for (const plan of config.cleaningPlans) {
+      const steps: Operation['method'][] = [
+        ...(plan.stripHtml ? ['strip-html' as const] : []),
+        ...(plan.trim ? ['trim' as const] : []),
+        ...(plan.replacements.length ? ['replace' as const] : []),
+        ...(plan.convert === 'keep' ? [] : [plan.convert]),
+      ];
+      if (!steps.length) throw new Error('Chọn phương pháp làm sạch cho cột.');
+      for (const method of steps)
+        combined = previewOperation(
+          { ...combined, versionId: source.versionId },
+          {
+            ...config,
+            method,
+            columnIds: [plan.columnId],
+            rowId: null,
+            cleaningPlans: [],
+            replacements: plan.replacements,
+          },
+          versionId,
+        ).dataset;
+    }
+    return describeChange(source, combined, config);
+  }
+  if (config.method === 'edit-row') {
+    const row = source.rows.find((r) => r.id === config.rowId);
+    if (!row) throw new Error('Dòng không còn tồn tại trong phiên bản đang xử lý.');
+    const keys = Object.keys(config.values);
+    if (!keys.length || keys.some((id) => !source.columns.some((c) => c.id === id)))
+      throw new Error('Cột sửa không hợp lệ.');
+    const edited = datasetSchema.parse({
+      ...source,
+      versionId,
+      rows: source.rows.map((r) =>
+        r.id === row.id ? { ...r, cells: { ...r.cells, ...config.values } } : r,
+      ),
+    });
+    const examples = keys.flatMap((id) =>
+      Object.is(row.cells[id], config.values[id])
+        ? []
+        : [
+            {
+              rowId: row.id,
+              columnId: id,
+              before: row.cells[id] ?? null,
+              after: config.values[id] ?? null,
+            },
+          ],
+    );
+    if (!examples.length) throw new Error('Không có giá trị thay đổi.');
+    return {
+      baseVersionId: source.versionId,
+      fingerprint: JSON.stringify(config),
+      configuration: config,
+      dataset: edited,
+      changes: { cells: examples.length, rows: 0, columns: 0 },
+      examples: examples.slice(0, 20),
+      warnings: [],
+      parameters: {},
+    };
+  }
   if (config.method === 'missing-batch') {
     if (
       !config.plans.length ||
@@ -390,6 +542,7 @@ export function previewOperation(
           throw new Error(
             `${column.name}: hãy xử lý missing trước hoặc chủ động tạo nhóm missing.`,
           );
+        const order = config.orders[id] ?? config.categories;
         const categories = [...new Set(values.filter((v) => v !== null).map(String))];
         if (config.method === 'onehot' && categories.length * source.rows.length > 2_000_000)
           throw new Error(
@@ -397,12 +550,13 @@ export function previewOperation(
           );
         if (
           config.method === 'ordinal' &&
-          (new Set(config.categories).size !== categories.length ||
-            categories.some((v) => !config.categories.includes(v)))
+          (order.length !== categories.length ||
+            new Set(order).size !== order.length ||
+            categories.some((v) => !order.includes(v)))
         )
           throw new Error('Thứ tự Ordinal phải chứa đủ mỗi nhóm đúng một lần.');
         for (const [index, category] of (config.method === 'ordinal'
-          ? config.categories
+          ? order
           : categories
         ).entries()) {
           parameters[`${id}:category:${category}`] = index;
@@ -436,7 +590,7 @@ export function previewOperation(
           parameters[`${id}:missing-category`] = categories.length;
         }
         if (config.method === 'ordinal') {
-          const ordering = new Map(config.categories.map((value, index) => [value, index]));
+          const ordering = new Map(order.map((value, index) => [value, index]));
           const nextId = config.keepOriginal ? `${id}:ordinal:${versionId}` : id;
           if (config.keepOriginal)
             result.columns.push({ id: nextId, name: `${column.name}_ordinal`, type: 'number' });

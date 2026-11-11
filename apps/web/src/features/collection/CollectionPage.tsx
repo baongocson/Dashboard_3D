@@ -22,6 +22,7 @@ type CollectionPageProps = {
   onCancelImport?: (() => void) | undefined;
   onNext: () => void;
   demoMode?: boolean;
+  nextBusy?: boolean;
 };
 
 export function CollectionPage({
@@ -34,56 +35,58 @@ export function CollectionPage({
   onCancelImport,
   onNext,
   demoMode = false,
+  nextBusy = false,
 }: CollectionPageProps) {
   return (
     <main className="workspace collection-workspace">
-      <p className="eyebrow">01 / COLLECTION — THU THẬP DỮ LIỆU</p>
-      <h1>Bắt đầu từ dữ liệu của bạn.</h1>
-      <p className="intro">
-        Chọn file CSV, kiểm tra dữ liệu đầu vào và chỉ chuyển bước khi đã có dữ liệu hợp lệ.
-      </p>
+      <p className="eyebrow">01 / COLLECTION</p>
+      <h1>Import and Explore Data</h1>
+
       {demoMode && (
         <p className="alert alert-demo" role="note">
-          CHẾ ĐỘ MẪU (chỉ dev): bảng bên dưới là fixture để kiểm tra UI. Chưa nhập CSV thật, chưa
-          lưu trên máy.
+          TEST FIXTURE — synthetic data, not a saved project.
         </p>
       )}
       <div className="collection-grid">
         <CsvImportPanel onImport={onImport} status={importStatus} onCancel={onCancelImport} />
         <section className="panel dataset-overview" aria-labelledby="overview-title">
           <div className="panel-heading">
-            <h2 id="overview-title">Tổng quan dữ liệu</h2>
+            <h2 id="overview-title">Dataset Overview</h2>
             <span className="chip">Collection</span>
           </div>
           {dataset ? (
             <>
               <p className="hint">
-                Nguồn: <strong>{fileName ?? 'Chưa có tên nguồn'}</strong>
-                {fileBytes === undefined ? '' : ` · ${fileBytes.toLocaleString('vi-VN')} byte`}
+                Source: <strong>{fileName ?? 'Untitled Source'}</strong>
+                {fileBytes === undefined ? '' : ` · ${fileBytes.toLocaleString('en-US')} byte`}
               </p>
               <div className="stat-grid">
                 <div className="metric">
-                  <span>Số dòng</span>
-                  <strong>{dataset.rows.length.toLocaleString('vi-VN')}</strong>
+                  <span>Rows</span>
+                  <strong>{dataset.rows.length.toLocaleString('en-US')}</strong>
                 </div>
                 <div className="metric">
-                  <span>Số cột</span>
-                  <strong>{dataset.columns.length.toLocaleString('vi-VN')}</strong>
+                  <span>Columns</span>
+                  <strong>{dataset.columns.length.toLocaleString('en-US')}</strong>
                 </div>
                 <div className="metric">
-                  <span>Ô thiếu</span>
+                  <span>Missing Cells</span>
                   <strong>
-                    {statistics ? statistics.missingCells.toLocaleString('vi-VN') : 'Chưa tính'}
+                    {statistics
+                      ? statistics.missingCells.toLocaleString('en-US')
+                      : 'Not Calculated'}
                   </strong>
                 </div>
                 <div className="metric">
-                  <span>Dòng có thiếu</span>
+                  <span>Rows with Missing Values</span>
                   <strong>
-                    {statistics ? statistics.rowsWithMissing.toLocaleString('vi-VN') : 'Chưa tính'}
+                    {statistics
+                      ? statistics.rowsWithMissing.toLocaleString('en-US')
+                      : 'Not Calculated'}
                   </strong>
                 </div>
                 <div className="metric">
-                  <span>Tỷ lệ thiếu</span>
+                  <span>Missing Rate</span>
                   <strong>
                     {statistics && dataset.rows.length
                       ? `${((statistics.missingCells / (dataset.rows.length * dataset.columns.length)) * 100).toFixed(2)}%`
@@ -91,60 +94,52 @@ export function CollectionPage({
                   </strong>
                 </div>
                 <div className="metric">
-                  <span>Dòng trùng dư</span>
+                  <span>Duplicate Rows</span>
                   <strong>
                     {statistics
-                      ? statistics.duplicateExcessRows.toLocaleString('vi-VN')
-                      : 'Chưa tính'}
+                      ? statistics.duplicateExcessRows.toLocaleString('en-US')
+                      : 'Not Calculated'}
                   </strong>
                 </div>
                 <div className="metric">
-                  <span>Ô ngoại lệ</span>
+                  <span>Outlier Cells</span>
                   <strong>
                     {statistics?.outlierCells === null || !statistics
-                      ? 'Chưa tính'
-                      : statistics.outlierCells.toLocaleString('vi-VN')}
+                      ? 'Not Calculated'
+                      : statistics.outlierCells.toLocaleString('en-US')}
                   </strong>
                 </div>
                 <div className="metric">
-                  <span>Dòng có ngoại lệ</span>
+                  <span>Rows with Outliers</span>
                   <strong>
                     {statistics?.outlierRows === null || !statistics
-                      ? 'Chưa tính'
-                      : statistics.outlierRows.toLocaleString('vi-VN')}
+                      ? 'Not Calculated'
+                      : statistics.outlierRows.toLocaleString('en-US')}
                   </strong>
                 </div>
               </div>
-              <p className="hint">
-                {statistics
-                  ? statistics.methodNote
-                  : 'Thống kê IQR và tương quan đang chờ được tính.'}
-              </p>
             </>
           ) : (
             <div className="empty-state" aria-labelledby="collection-title">
               <div className="file-mark" aria-hidden="true">
                 CSV
               </div>
-              <h2 id="collection-title">Chưa có dữ liệu</h2>
-              <p>
-                Chọn tệp CSV tại khung bên trái. Chưa thể hiển thị bảng trước khi Worker trả Dataset
-                hợp lệ.
-              </p>
-              <p className="limit">CSV · Tối đa 20 MB (20.000.000 byte)</p>
+              <h2 id="collection-title">No Data</h2>
+              <p>Select a CSV file to begin.</p>
+              <p className="limit">CSV · Maximum 20 MB (20.000.000 byte)</p>
             </div>
           )}
         </section>
       </div>
       {dataset && <DatasetTable dataset={dataset} />}
       <div className="bottom-actions">
-        <p className="scope-note" role="status">
-          {dataset
-            ? 'Collection giữ dữ liệu nguồn. Trạng thái lưu trên máy và đồng bộ được hiển thị riêng phía trên.'
-            : 'Nhập CSV để tạo project và phiên làm việc mới.'}
-        </p>
-        <button className="primary-button" type="button" disabled={!dataset} onClick={onNext}>
-          Next — Pre-processing
+        <button
+          className="primary-button"
+          type="button"
+          disabled={!dataset || nextBusy}
+          onClick={onNext}
+        >
+          {nextBusy ? 'Preparing…' : 'Preprocessing'}
         </button>
       </div>
     </main>

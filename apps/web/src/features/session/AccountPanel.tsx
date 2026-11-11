@@ -88,7 +88,7 @@ export function AccountPanel({
         if (active && caught instanceof HttpError && caught.status === 401) {
           setAccount(null);
           onAccount(null);
-          setMessage('Phiên online đã hết hạn. Dữ liệu local được giữ; đăng nhập lại để đồng bộ.');
+          setMessage('Your session has expired. Sign in to sync.');
         }
       }
     }
@@ -118,7 +118,7 @@ export function AccountPanel({
           if (caught instanceof HttpError && caught.status === 401) {
             setAccount(null);
             onAccount(null);
-            setMessage('Phiên đã hết hạn. Dữ liệu local vẫn được giữ.');
+            setMessage('Your session has expired. Local data is retained.');
           }
         });
     };
@@ -142,10 +142,10 @@ export function AccountPanel({
       setPassword('');
       if (mode === 'register') {
         setMode('login');
-        setMessage('Đăng ký thành công. Hãy đăng nhập.');
+        setMessage('Account created. Please sign in.');
       } else install(authSessionResponseSchema.parse(result));
     } catch (caught: unknown) {
-      setMessage(caught instanceof Error ? caught.message : 'Không kết nối được API.');
+      setMessage(caught instanceof Error ? caught.message : 'Cannot connect to the server.');
     } finally {
       setRunning(false);
     }
@@ -162,9 +162,9 @@ export function AccountPanel({
         (o) => owned.has(o.projectId) && o.status !== 'synced',
       );
       if (!navigator.onLine && pending.length)
-        throw new Error('Offline và có dữ liệu chưa đồng bộ: chưa thể đăng xuất.');
+        throw new Error('Cannot sign out offline with unsynced changes.');
       if (pending.length && !discard) {
-        if (!account) throw new Error('Hãy đăng nhập lại để đồng bộ hoặc xác nhận xóa bản local.');
+        if (!account) throw new Error('Sign in to sync or confirm deleting local data.');
         await onSync(account);
       }
       if (navigator.onLine) await api('/auth/logout', 'POST', {});
@@ -175,7 +175,7 @@ export function AccountPanel({
       onLogout();
     } catch (caught: unknown) {
       setMessage(
-        caught instanceof Error ? caught.message : 'Đăng xuất thất bại; dữ liệu local được giữ.',
+        caught instanceof Error ? caught.message : 'Sign out failed. Local data was kept.',
       );
     } finally {
       setRunning(false);
@@ -185,13 +185,13 @@ export function AccountPanel({
     <details className="account-panel" open={!user}>
       <summary>
         {user
-          ? `Tài khoản: ${user.username}${account ? '' : ' (local/offline)'}`
-          : 'Đăng nhập / Đăng ký'}
+          ? `Account: ${user.username}${account ? '' : ' (local/offline)'}`
+          : 'Sign In / Sign Up'}
       </summary>
       <div className="account-body">
         {user && account ? (
           <>
-            <p>Đã đăng nhập: {user.username}</p>
+            <p>Signed in: {user.username}</p>
             <button
               disabled={busy || running}
               className="quiet-button"
@@ -199,7 +199,7 @@ export function AccountPanel({
                 setConfirmLogout(true);
               }}
             >
-              Đăng xuất
+              Sign Out
             </button>
           </>
         ) : (
@@ -209,9 +209,9 @@ export function AccountPanel({
               void submit();
             }}
           >
-            <h3>{mode === 'login' ? 'Đăng nhập' : 'Đăng ký (không cần email)'}</h3>
+            <h3>{mode === 'login' ? 'Sign In' : 'Create Account'}</h3>
             <label className="form-field">
-              Tên đăng nhập
+              Username
               <input
                 autoComplete="username"
                 value={username}
@@ -222,7 +222,7 @@ export function AccountPanel({
               />
             </label>
             <label className="form-field">
-              Mật khẩu
+              Password
               <input
                 type="password"
                 autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
@@ -235,7 +235,7 @@ export function AccountPanel({
             </label>
             <div className="action-row">
               <button className="primary-button" disabled={running || busy} type="submit">
-                {mode === 'login' ? 'Đăng nhập' : 'Tạo tài khoản'}
+                {mode === 'login' ? 'Sign In' : 'Create Account'}
               </button>
               <button
                 type="button"
@@ -245,7 +245,7 @@ export function AccountPanel({
                   setMode(mode === 'login' ? 'register' : 'login');
                 }}
               >
-                {mode === 'login' ? 'Chuyển sang đăng ký' : 'Về đăng nhập'}
+                {mode === 'login' ? 'Sign Up' : 'Back to Sign In'}
               </button>
             </div>
             {user && (
@@ -256,16 +256,16 @@ export function AccountPanel({
                   setConfirmLogout(true);
                 }}
               >
-                Đăng xuất tài khoản local
+                Sign Out Locally
               </button>
             )}
           </form>
         )}
         {confirmLogout && (
-          <div role="dialog" aria-label="Xác nhận đăng xuất">
+          <div role="dialog" aria-label="Confirm Sign Out">
             <p>
-              Đăng xuất sẽ xóa dữ liệu local của tài khoản này. Chọn đồng bộ trước để giữ kết quả
-              trên server. Khi offline và còn dữ liệu chưa đồng bộ, đăng xuất bị chặn.
+              Signing out removes local data for this account. Sync first to keep your changes on
+              the server.
             </p>
             <button
               disabled={running || busy}
@@ -273,7 +273,7 @@ export function AccountPanel({
                 void logout(false);
               }}
             >
-              Đồng bộ trước rồi đăng xuất
+              Sync and Sign Out
             </button>
             <button
               disabled={running || busy || !navigator.onLine}
@@ -281,7 +281,7 @@ export function AccountPanel({
                 void logout(true);
               }}
             >
-              Xác nhận vẫn đăng xuất và xóa dữ liệu chưa đồng bộ
+              Sign Out and Delete Unsynced Data
             </button>
             <button
               disabled={running}
@@ -289,19 +289,13 @@ export function AccountPanel({
                 setConfirmLogout(false);
               }}
             >
-              Hủy
+              Cancel
             </button>
           </div>
         )}
         {message && (
           <p role="status" className="hint">
             {message}
-          </p>
-        )}
-        {!user && (
-          <p className="hint">
-            Đăng nhập để tạo hoặc mở project. Tài khoản đã mở khóa trên máy có thể tiếp tục làm việc
-            offline.
           </p>
         )}
       </div>

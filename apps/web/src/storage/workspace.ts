@@ -62,7 +62,7 @@ export type OpenProject = {
 export async function loadVersion(id: string): Promise<Dataset> {
   const version = versionSchema.parse(await db.versions.get(id));
   const dataset = await readDatasetChunks(version.manifestId);
-  if (dataset.versionId !== id) throw new Error('Dữ liệu không khớp phiên bản.');
+  if (dataset.versionId !== id) throw new Error('Dataset version mismatch.');
   return dataset;
 }
 export async function openProject(sessionId: string): Promise<OpenProject> {
@@ -173,7 +173,7 @@ export async function saveWorkspace(open: OpenProject, workspace: Workspace): Pr
       current?.currentVersionId !== next.currentVersionId ||
       current.confirmedConfiguration.workspace !== open.session.confirmedConfiguration.workspace
     )
-      throw new Error('Phiên đã đổi ở tab khác. Hãy mở lại.');
+      throw new Error('This session changed in another tab. Reopen it.');
     await db.sessions.put(next);
     await enqueue(next.projectId, 'save-session');
   });
@@ -183,12 +183,13 @@ export async function commitPreview(
   open: OpenProject,
   preview: OperationPreview,
   workspace: Workspace,
+  selection: Session['table']['selection'] = null,
 ): Promise<OpenProject> {
   if (
     preview.baseVersionId !== open.dataset.versionId ||
     preview.fingerprint !== JSON.stringify(preview.configuration)
   )
-    throw new Error('Preview đã cũ. Hãy xem trước lại.');
+    throw new Error('The preview is outdated. Generate a new preview.');
   const dataset = datasetSchema.parse(preview.dataset);
   const { manifest } = await saveDatasetChunks(open.session.datasetId, dataset.versionId, dataset);
   const operationId = crypto.randomUUID();
@@ -201,7 +202,7 @@ export async function commitPreview(
     {
       ...open.session,
       currentVersionId: dataset.versionId,
-      table: { ...open.session.table, selection: null },
+      table: { ...open.session.table, selection },
     },
     nextWorkspace,
   );
@@ -252,7 +253,7 @@ export async function commitPreview(
 }
 export async function undoWorkspace(open: OpenProject, workspace: Workspace): Promise<OpenProject> {
   const previousId = workspace.undo.at(-1);
-  if (!previousId) throw new Error('Không có thao tác để hoàn tác.');
+  if (!previousId) throw new Error('No operation to undo.');
   const previous = await loadVersion(previousId);
   const nextWorkspace = {
     ...workspace,
@@ -263,7 +264,7 @@ export async function undoWorkspace(open: OpenProject, workspace: Workspace): Pr
   await db.transaction('rw', [db.sessions, db.histories, db.outbox], async () => {
     const current = await db.sessions.get(session.id);
     if (current?.currentVersionId !== open.dataset.versionId)
-      throw new Error('Phiên đã đổi. Hãy mở lại.');
+      throw new Error('The session has changed. Reopen it.');
     const operationId = crypto.randomUUID();
     await db.histories.add({
       sequence: nextWorkspace.historySequence,

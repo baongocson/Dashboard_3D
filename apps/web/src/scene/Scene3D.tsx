@@ -1,6 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree, type ThreeEvent } from '@react-three/fiber';
 import { Color, InstancedMesh, Object3D } from 'three';
+import {
+  axisOptions,
+  scatterRows,
+  missingPointColor,
+  coordinate,
+  AXIS_NAMES,
+} from './scatterModel';
+import { RowDetails, type SaveRow } from './RowDetails';
+import { useDraftGuard } from './DraftGuard';
+import { ScatterAxes, Projection } from './ScatterAxes';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import type { Dataset } from '@dashboard/contracts';
 import type { CellSelection } from '../components/DatasetTable';
@@ -26,6 +36,7 @@ type Props = {
   view?: View | undefined;
   onView: (view: View) => void;
   outlierView?: OutlierView;
+  onSaveRow?: SaveRow | undefined;
 };
 
 function CameraControls({
@@ -85,7 +96,7 @@ function Points({
 }: {
   points: Point[];
   onPick: (point: Point) => void;
-  onHover: (point: Point | null) => void;
+  onHover: (point: Point | null, event?: ThreeEvent<PointerEvent>) => void;
   selection: CellSelection | null;
   bars: boolean;
   onReady: (ready: boolean) => void;
@@ -121,13 +132,14 @@ function Points({
       args={[undefined, undefined, points.length]}
       onClick={(event) => {
         const point = pointAt(event);
-        if (point) {
+        if (point && event.delta <= 5) {
           event.stopPropagation();
           onPick(point);
         }
       }}
       onPointerMove={(event) => {
-        onHover(pointAt(event) ?? null);
+        event.stopPropagation();
+        onHover(pointAt(event) ?? null, event);
       }}
       onPointerOut={() => {
         onHover(null);
@@ -149,206 +161,264 @@ export function Scene3D({
   view,
   onView,
   outlierView,
+  onSaveRow,
 }: Props) {
-  const [hover, setHover] = useState<Point | null>(null);
+  const guard = useDraftGuard();
+  const [chosenAxes, setChosenAxes] = useState<string[] | null>(null);
+  const [hover, setHover] = useState<{ version: string; rowId: string } | null>(null);
+  const [pinned, setPinned] = useState<{ version: string; rowId: string } | null>(null);
+  const [projections, setProjections] = useState(false);
   const [ready, setReady] = useState(false);
   const [observedView, setObservedView] = useState<View | null>(null);
-  const column =
-    dataset.columns.find((c) => c.id === columnId) ??
-    dataset.columns.find((c) => c.type === 'number') ??
-    dataset.columns[0];
-  const stats = column ? analysis?.columns.find((c) => c.id === column.id)?.statistics : null;
-  const bars = ['scaling', 'transformation', 'encoding'].includes(section);
-  const outlierMethod = outlierView?.method ?? 'iqr',
-    threshold = outlierView?.threshold ?? 1.5;
-  const spread = stats ? (outlierMethod === 'iqr' ? stats.q3 - stats.q1 : stats.deviation) : 0;
-  const lower = stats ? (outlierMethod === 'iqr' ? stats.q1 : stats.mean) - threshold * spread : 0;
-  const upper = stats ? (outlierMethod === 'iqr' ? stats.q3 : stats.mean) + threshold * spread : 0;
-  const points = useMemo((): Point[] => {
-    const summary = analysis?.columns.find((c) => c.id === column?.id);
-    if (bars && summary) {
-      const bins = summary.histogram;
-      const categories = summary.categories;
-      const counts = bins.length ? bins.map((b) => b.count) : categories.map((c) => c.count);
-      const maximum = counts.reduce((m, n) => Math.max(m, n), 1);
-      return counts.slice(0, 1500).map((count, i) => {
-        const height = (count / maximum) * 6;
-        const bin = bins[i],
-          category = categories[i];
-        return {
-          rowId: '',
-          columnId: summary.id,
-          position: [
-            (i / Math.max(1, Math.min(counts.length, 1500) - 1)) * 8 - 4,
-            -3 + height / 2,
-            0,
-          ],
-          height,
-          color: '#38bdf8',
-          label: `${summary.name}: ${bin ? `[${bin.lower.toPrecision(4)}, ${bin.upper.toPrecision(4)}]` : (category?.value ?? '')} · ${String(count)} bản ghi`,
-        };
-      });
-    }
-    if (section === 'collection' && analysis?.correlation.length) {
-      const names = [...new Set(analysis.correlation.map((c) => c.a))];
-      return analysis.correlation.slice(0, 1500).map((c) => ({
-        rowId: '',
-        columnId: '',
-        position: [names.indexOf(c.a) - names.length / 2, 0, names.indexOf(c.b) - names.length / 2],
-        color: c.coefficient === null ? '#78849c' : c.coefficient < 0 ? '#fb7185' : '#38bdf8',
-        label: `${c.a} × ${c.b}: ${c.coefficient?.toFixed(4) ?? `N/A (${c.reason ?? ''})`}`,
-      }));
-    }
-    if (section === 'cleaning' && analysis)
-      return analysis.columns
-        .flatMap((c, i) =>
-          c.issues.map((issue, j): Point => ({
-            rowId: '',
-            columnId: c.id,
-            position: [
-              (i / Math.max(1, dataset.columns.length - 1)) * 8 - 4,
-              j * 2 - 2,
-              (issue.count / Math.max(1, dataset.rows.length)) * 6 - 3,
-            ],
-            color: ['#fbbf24', '#38bdf8', '#c084fc'][j] ?? '#38bdf8',
-            label: `${c.name} / ${issue.kind}: ${String(issue.count)} ô`,
-          })),
-        )
-        .slice(0, 1500);
-    // Missing is intentionally a dependent quality view: Y + Z = number of columns.
-    return dataset.rows.slice(0, 1500).flatMap((row, index): Point[] => {
-      const missingColumns = dataset.columns.filter((c) => row.cells[c.id] === null);
-      const missing = missingColumns.length,
-        total = dataset.columns.length;
-      const raw = column ? row.cells[column.id] : null;
-      if (section !== 'missing' && section !== 'collection' && typeof raw !== 'number') return [];
-      const y =
-        section === 'missing' || section === 'collection'
-          ? (missing / total) * 6 - 3
-          : stats && stats.max !== stats.min && typeof raw === 'number'
-            ? ((raw - stats.min) / (stats.max - stats.min)) * 6 - 3
-            : 0;
-      const outside = spread > 0 && typeof raw === 'number' && (raw < lower || raw > upper);
-      if (section === 'outliers' && outlierView?.onlyOutliers && !outside) return [];
-      return [
-        {
-          rowId: row.id,
-          columnId:
-            (columnId && dataset.columns.some((c) => c.id === columnId)
-              ? columnId
-              : missingColumns[0]?.id) ??
-            dataset.columns[0]?.id ??
-            '',
-          position: [
-            (index / Math.max(1, dataset.rows.length - 1)) * 8 - 4,
-            y,
-            section === 'missing' || section === 'collection'
-              ? ((total - missing) / total) * 6 - 3
-              : 0,
-          ],
-          color:
-            section === 'outliers' && outside
-              ? '#fb7185'
-              : missing
-                ? new Color('#fbbf24').lerp(new Color('#ef4444'), missing / total).getStyle()
-                : '#38bdf8',
-          label: `${row.id} · thiếu ${String(missing)}/${String(total)} (${((missing / total) * 100).toFixed(1)}%)${column ? ` · ${column.name}: ${String(raw)}` : ''}`,
-        },
-      ];
+  const options = useMemo(() => axisOptions(dataset), [dataset]);
+  const axes = useMemo(() => {
+    const numeric = dataset.columns.filter((c) => c.type === 'number').map((c) => c.id);
+    const defaults = Array.from({ length: 3 }, (_, i) => numeric[i] ?? '__row');
+    return (chosenAxes ?? defaults)
+      .map((id) => options.find((a) => a.id === id) ?? options[0])
+      .filter((a) => a !== undefined);
+  }, [chosenAxes, options, dataset.columns]);
+  const model = useMemo(() => scatterRows(dataset, axes), [dataset, axes]);
+  const column = dataset.columns.find((c) => c.id === columnId);
+  const stats = analysis?.columns.find((c) => c.id === columnId)?.statistics;
+  const method = outlierView?.method ?? 'iqr';
+  const spread = stats ? (method === 'iqr' ? stats.q3 - stats.q1 : stats.deviation) : 0;
+  const threshold = outlierView?.threshold ?? 1.5;
+  const lower = stats ? (method === 'iqr' ? stats.q1 : stats.mean) - threshold * spread : 0;
+  const upper = stats ? (method === 'iqr' ? stats.q3 : stats.mean) + threshold * spread : 0;
+  const points = useMemo(
+    () =>
+      model.points.flatMap((point) => {
+        const row = dataset.rows[point.index];
+        if (!row) return [];
+        const raw = columnId ? row.cells[columnId] : null;
+        const outside = spread > 0 && typeof raw === 'number' && (raw < lower || raw > upper);
+        if (section === 'outliers' && outlierView?.onlyOutliers && !outside) return [];
+        return [
+          {
+            ...point,
+            columnId: columnId ?? axes[0]?.columnId ?? dataset.columns[0]?.id ?? '',
+            color:
+              section === 'missing'
+                ? missingPointColor(
+                    dataset.columns.filter((c) => row.cells[c.id] === null).length,
+                    dataset.columns.length,
+                  )
+                : outside && section === 'outliers'
+                  ? '#fb7185'
+                  : '#38bdf8',
+            label: row.id,
+          },
+        ];
+      }),
+    [model, dataset, columnId, axes, spread, lower, upper, section, outlierView?.onlyOutliers],
+  );
+  const active =
+    pinned && dataset.rows.some((r) => r.id === pinned.rowId)
+      ? pinned
+      : hover?.version === dataset.versionId
+        ? hover
+        : null;
+  const rowIndex = active ? dataset.rows.findIndex((r) => r.id === active.rowId) : -1;
+  const row = dataset.rows[rowIndex];
+  const activePoint = points.find((p) => p.rowId === row?.id);
+  const isPinned = Boolean(pinned && dataset.rows.some((r) => r.id === pinned.rowId));
+  const pickLatest = useRef<(rowId: string) => void>(() => {});
+  pickLatest.current = (rowId) => {
+    setPinned({ version: dataset.versionId, rowId });
+    onSelect({
+      versionId: dataset.versionId,
+      rowId,
+      columnId: columnId ?? axes[0]?.columnId ?? dataset.columns[0]?.id ?? '',
     });
-  }, [
-    dataset,
-    section,
-    column,
-    columnId,
-    stats,
-    analysis,
-    bars,
-    lower,
-    upper,
-    spread,
-    outlierView?.onlyOutliers,
-  ]);
+  };
+  const pick = (rowId: string) => {
+    guard.request(() => {
+      pickLatest.current(rowId);
+    });
+  };
+
   return (
     <div className="chart-region">
-      <div
-        className="scene-canvas"
-        data-scene-ready={ready}
-        data-camera={JSON.stringify(observedView)}
-        aria-label={`Biểu đồ 3D ${section}`}
-      >
-        <Canvas camera={{ position: [10, 8, 12], fov: 45 }} frameloop="demand">
-          <color attach="background" args={['#0d1729']} />
-          <ambientLight intensity={1.5} />
-          <directionalLight position={[4, 8, 5]} intensity={2} />
-          <gridHelper args={[12, 12, '#334763', '#1b2e48']} position={[0, -3.3, 0]} />
-          <axesHelper args={[5]} />
-          {section === 'outliers' &&
-            stats &&
-            spread > 0 &&
-            stats.max !== stats.min &&
-            [lower, upper].map((boundary, index) => (
-              <mesh
-                key={index}
-                position={[0, ((boundary - stats.min) / (stats.max - stats.min)) * 6 - 3, 0]}
-                rotation={[-Math.PI / 2, 0, 0]}
-              >
-                <planeGeometry args={[9, 4]} />
-                <meshBasicMaterial color="#fb7185" transparent opacity={0.15} side={2} />
-              </mesh>
-            ))}
-          <Points
-            points={points}
-            bars={bars}
-            onReady={setReady}
-            selection={selection?.versionId === dataset.versionId ? selection : null}
-            onHover={setHover}
-            onPick={(point) => {
-              setHover(point);
-              if (point.rowId && point.columnId)
-                onSelect({
-                  versionId: dataset.versionId,
-                  rowId: point.rowId,
-                  columnId: point.columnId,
-                });
+      <div className="action-row scatter-controls">
+        {axes.map((axis, i) => (
+          <label key={i}>
+            Axis {AXIS_NAMES[i]}
+            <select
+              aria-label={`Axis ${String(AXIS_NAMES[i])}`}
+              value={axis.id}
+              onChange={(e) => {
+                const next = axes.map((a) => a.id);
+                next[i] = e.target.value;
+                setChosenAxes(next);
+              }}
+            >
+              {options.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+        <label>
+          <input
+            type="checkbox"
+            checked={projections}
+            onChange={(e) => {
+              setProjections(e.target.checked);
             }}
-          />
-          <CameraControls view={view} onView={onView} onObserved={setObservedView} />
-        </Canvas>
-        <div className="chart-tooltip" role="status">
-          {hover?.label ?? 'Kéo để xoay · Cuộn để zoom · Nhấn điểm để chọn dòng/ô'}
-        </div>
+          />{' '}
+          Axis Projections
+        </label>
       </div>
-      <p className="hint">
-        Phiên bản vẽ: {dataset.versionId} ·{' '}
-        {bars || section === 'collection' || section === 'cleaning'
-          ? `${String(points.length)} ô/nhóm hiển thị`
-          : `${points.length.toLocaleString('vi-VN')}/${dataset.rows.length.toLocaleString('vi-VN')} dòng đầu hiển thị`}{' '}
-        · Tổng {dataset.rows.length.toLocaleString('vi-VN')} dòng (tối đa 1.500 đối tượng; thống kê
-        toàn bộ).
+      <div className="scatter-layout">
+        <div>
+          <div
+            className="scene-canvas"
+            data-scene-ready={ready}
+            data-active-row={row?.id ?? ''}
+            data-active-color={activePoint?.color ?? ''}
+            data-active-position={JSON.stringify(activePoint?.position ?? null)}
+            data-projections={projections}
+            data-camera={JSON.stringify(observedView)}
+            aria-label={`3D Scatter Plot ${section}`}
+          >
+            <Canvas camera={{ position: [13, 10, 14], fov: 45 }} frameloop="demand">
+              <color attach="background" args={['#0d1729']} />
+              <ambientLight intensity={1.5} />
+              <directionalLight position={[4, 8, 5]} intensity={2} />
+              <ScatterAxes axes={axes} />
+              {projections && activePoint && <Projection position={activePoint.position} />}
+              {section === 'outliers' &&
+                stats &&
+                spread > 0 &&
+                axes[1]?.columnId === columnId &&
+                axes[1].id === columnId &&
+                [lower, upper].map((v, i) => {
+                  const axis = axes[1];
+                  if (
+                    !axis ||
+                    axis.min === null ||
+                    axis.max === null ||
+                    v < axis.min ||
+                    v > axis.max
+                  )
+                    return null;
+                  return (
+                    <mesh
+                      key={i}
+                      position={[0, coordinate(v, axis), 0]}
+                      rotation={[-Math.PI / 2, 0, 0]}
+                    >
+                      <planeGeometry args={[8, 8]} />
+                      <meshBasicMaterial
+                        color="#fb7185"
+                        transparent
+                        opacity={0.12}
+                        side={2}
+                        depthWrite={false}
+                      />
+                    </mesh>
+                  );
+                })}
+              <Points
+                points={points}
+                bars={false}
+                onReady={setReady}
+                selection={
+                  row
+                    ? { versionId: dataset.versionId, rowId: row.id, columnId: column?.id ?? '' }
+                    : selection?.versionId === dataset.versionId
+                      ? selection
+                      : null
+                }
+                onHover={(point) => {
+                  if (!isPinned && point)
+                    setHover({ version: dataset.versionId, rowId: point.rowId });
+                }}
+                onPick={(point) => {
+                  pick(point.rowId);
+                }}
+              />
+              <CameraControls view={view} onView={onView} onObserved={setObservedView} />
+            </Canvas>
+          </div>
+        </div>
+        <aside className="scatter-details" aria-label="Row Details">
+          <label>
+            Select Row
+            <select
+              aria-label="Select Row"
+              value={row?.id ?? ''}
+              onChange={(e) => {
+                if (e.target.value) pick(e.target.value);
+              }}
+            >
+              <option value="">Select a row…</option>
+              {dataset.rows.map((r, i) => (
+                <option key={r.id} value={r.id}>
+                  Row {i + 1} · {r.id}
+                </option>
+              ))}
+            </select>
+          </label>
+          {isPinned && (
+            <button
+              type="button"
+              onClick={() => {
+                guard.request(() => {
+                  setPinned(null);
+                  setHover(null);
+                });
+              }}
+            >
+              Unpin
+            </button>
+          )}
+          {row ? (
+            <>
+              <p role="status">
+                Row {rowIndex + 1} · ID {row.id} · {isPinned ? 'Pinned' : 'Viewing'}
+              </p>
+              {!activePoint && (
+                <p className="hint">
+                  Row not plotted:{' '}
+                  {model.rejected.find((r) => r.rowId === row.id)?.reason ??
+                    'excluded by the outlier filter'}
+                  .
+                </p>
+              )}
+              <RowDetails
+                key={`${dataset.versionId}:${row.id}`}
+                dataset={dataset}
+                row={row}
+                axes={axes}
+                onSave={dataset.versionId === currentVersionId ? onSaveRow : undefined}
+                onBegin={() => {
+                  setPinned({ version: dataset.versionId, rowId: row.id });
+                }}
+              />
+            </>
+          ) : (
+            <p>Select a point or a row.</p>
+          )}
+        </aside>
+      </div>
+      <p role="status">
+        Showing {points.length}/{dataset.rows.length} rows · Not Plotted: {model.rejected.length}
       </p>
-      <p className="hint">
-        {section === 'collection' && analysis?.correlation.length
-          ? 'X/Z: cặp cột; Y cố định. Xanh: tương quan dương; đỏ: âm; xám: N/A. Nhấn/rê điểm xem hệ số.'
-          : section === 'missing' || section === 'collection'
-            ? 'X: thứ tự dòng; Y: số ô thiếu; Z: số ô hợp lệ (tọa độ chuẩn hóa theo số cột). Y và Z phụ thuộc nhau. Xanh: không thiếu; vàng → đỏ: tỷ lệ thiếu tăng.'
-            : bars
-              ? `X: khoảng giá trị/nhóm của ${column?.name ?? 'cột đã chọn'}; Y: số bản ghi (tỷ lệ tương đối theo đỉnh); Z: phân bố trên mặt phẳng. Rê cột xem số lượng và khoảng gốc.`
-              : section === 'cleaning'
-                ? 'X: cột; Y: loại vấn đề (missing / khoảng trắng / HTML); Z: số ô ảnh hưởng, chuẩn hóa theo tổng dòng. Rê điểm xem số lượng.'
-                : `X: thứ tự dòng; Y: ${column?.name ?? 'chưa chọn cột số'}; Z: mặt phẳng (không có cột phụ). Đỏ: ngoại lệ ${outlierMethod}, ngưỡng ${String(threshold)}.`}
-      </p>
-      {section === 'outliers' && (
-        <p className="hint">
-          {stats && spread > 0
-            ? `Biên dưới: ${String(lower)} · Biên trên: ${String(upper)}`
-            : 'N/A — không có cột số phù hợp hoặc độ phân tán bằng 0.'}
-        </p>
+      {section === 'missing' && (
+        <div className="missing-color-legend">
+          <span>Complete</span>
+          <i />
+          <span>Fewer Missing Values</span>
+          <b />
+          <span>More Missing Values</span>
+        </div>
       )}
       {dataset.versionId !== currentVersionId && (
-        <p className="alert alert-demo">
-          Dữ liệu đã thay đổi — cần chạy lại. Biểu đồ cũ chỉ xem; chọn ô trong bảng hiện tại để sửa.
-        </p>
+        <p className="alert alert-demo">Outdated chart · Select “Refresh Chart” to update.</p>
       )}
     </div>
   );

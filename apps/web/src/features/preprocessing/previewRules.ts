@@ -12,19 +12,19 @@ export function parseFillValue(
   raw: string,
 ): { valid: true; value: string | number | boolean } | { valid: false; reason: string } {
   if (columnType === 'number') {
-    if (raw.trim() === '') return { valid: false, reason: 'Hãy nhập một số.' };
+    if (raw.trim() === '') return { valid: false, reason: 'Enter a number.' };
     const numberValue = Number(raw);
     if (
       !isNumericValue(raw) ||
       !Number.isFinite(numberValue) ||
       (Number.isInteger(numberValue) && !Number.isSafeInteger(numberValue))
     ) {
-      return { valid: false, reason: 'Phải là số hữu hạn, không mất độ chính xác.' };
+      return { valid: false, reason: 'Enter a finite number without losing precision.' };
     }
     return { valid: true, value: numberValue };
   }
   if (columnType === 'boolean') {
-    if (raw !== 'true' && raw !== 'false') return { valid: false, reason: 'Chọn true hoặc false.' };
+    if (raw !== 'true' && raw !== 'false') return { valid: false, reason: 'Select true or false.' };
     return { valid: true, value: raw === 'true' };
   }
   if (columnType === 'date' && z.iso.date().safeParse(raw).success)
@@ -32,7 +32,10 @@ export function parseFillValue(
   if (columnType === 'datetime' && z.iso.datetime({ offset: true }).safeParse(raw).success)
     return { valid: true, value: new Date(raw).toISOString() };
   if (columnType === 'text') return { valid: true, value: raw };
-  return { valid: false, reason: 'Ngày phải là ISO YYYY-MM-DD; datetime phải có timezone.' };
+  return {
+    valid: false,
+    reason: 'Use ISO YYYY-MM-DD for dates and include a timezone for datetimes.',
+  };
 }
 
 export function buildFillConfig(

@@ -116,3 +116,55 @@ describe('durable local publication', () => {
     expect(await db.histories.count()).toBe(1);
   });
 });
+
+describe('inline row edit publication', () => {
+  it('edits by stable ID in a reordered dataset, preserves source and reopens new version/selection', async () => {
+    const input = { ...dataset, rows: [...dataset.rows].reverse() };
+    const open = await createProject(input, 'inline-fixture.csv', 20, 'test-only');
+    const preview = previewOperation(
+      input,
+      { method: 'edit-row', columnIds: ['c'], rowId: 'r2', values: { c: 0 } },
+      'edited',
+    );
+    const selection = { versionId: 'edited', rowId: 'r2', columnId: 'c' };
+    const next = await commitPreview(open, preview, open.workspace, selection);
+    const reopened = await openProject(next.session.id);
+    expect(reopened.dataset.rows.find((r) => r.id === 'r2')?.cells.c).toBe(0);
+    expect(reopened.source).toEqual(input);
+    expect(reopened.session.table.selection).toEqual(selection);
+    expect((await db.histories.toArray())[0]?.rowIds).toEqual(['r2']);
+    expect(await db.outbox.count()).toBe(2);
+  });
+  it('rejects wrong cell types and failed transactions leave current/source unchanged', async () => {
+    expect(() =>
+      previewOperation(
+        dataset,
+        { method: 'edit-row', columnIds: ['c'], rowId: 'r2', values: { c: 'bad' } },
+        'bad',
+      ),
+    ).toThrow();
+    expect(() =>
+      previewOperation(
+        dataset,
+        { method: 'edit-row', columnIds: ['c'], rowId: 'unknown', values: { c: 3 } },
+        'bad',
+      ),
+    ).toThrow();
+    const open = await createProject(dataset, 'inline-fixture.csv', 20, 'test-only');
+    vi.spyOn(db.outbox, 'add').mockRejectedValueOnce(new Error('Simulated disk failure'));
+    await expect(
+      commitPreview(
+        open,
+        previewOperation(
+          dataset,
+          { method: 'edit-row', columnIds: ['c'], rowId: 'r2', values: { c: 3 } },
+          'v2',
+        ),
+        open.workspace,
+      ),
+    ).rejects.toThrow('Simulated disk failure');
+    const reopened = await openProject(open.session.id);
+    expect(reopened.dataset).toEqual(dataset);
+    expect(reopened.source).toEqual(dataset);
+  });
+});

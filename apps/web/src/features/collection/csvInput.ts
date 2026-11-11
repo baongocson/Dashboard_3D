@@ -23,13 +23,13 @@ export function validateCsvInput(
   file: Pick<File, 'name' | 'size'> | null,
   options: CsvOptions,
 ): string | null {
-  if (!file) return 'Hãy chọn một tệp CSV.';
-  if (!file.name.toLowerCase().endsWith('.csv')) return 'Chỉ nhận tệp có đuôi .csv.';
-  if (file.size === 0) return 'Tệp đang trống.';
+  if (!file) return 'Select a CSV file.';
+  if (!file.name.toLowerCase().endsWith('.csv')) return 'Only .csv files are supported.';
+  if (file.size === 0) return 'The file is empty.';
   if (file.size > MAX_CSV_BYTES)
-    return `Tệp vượt giới hạn ${MAX_CSV_BYTES.toLocaleString('vi-VN')} byte.`;
+    return `The file exceeds the limit of ${MAX_CSV_BYTES.toLocaleString('en-US')} byte.`;
   const checkedFile = csvFileSchema.safeParse({ name: file.name, bytes: file.size });
-  if (!checkedFile.success) return 'Thông tin tệp không hợp lệ.';
-  if (!csvOptionsSchema.safeParse(options).success) return 'Cấu hình đọc CSV không hợp lệ.';
+  if (!checkedFile.success) return 'Invalid file information.';
+  if (!csvOptionsSchema.safeParse(options).success) return 'Invalid CSV settings.';
   return null;
 }

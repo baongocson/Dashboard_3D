@@ -41,11 +41,11 @@ export const csvCases = [
     ],
   },
   {
-    id: 'tokens-opt-in',
+    id: 'default-null-token',
     input: 'a,b,c\nNA,null,-',
     options: { delimiter: ',', header: true },
     expectedColumns: ['a', 'b', 'c'],
-    expectedRows: [['NA', 'null', '-']],
+    expectedRows: [['NA', null, '-']],
   },
   {
     id: 'lossless-text',

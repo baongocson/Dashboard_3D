@@ -65,7 +65,7 @@ self.onmessage = async (event: MessageEvent<unknown>) => {
     self.postMessage({
       jobId,
       type: 'error',
-      message: error instanceof Error ? error.message : 'Không thể xử lý dữ liệu.',
+      message: error instanceof Error ? error.message : 'Could not process the data.',
     });
   }
 };

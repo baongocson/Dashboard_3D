@@ -24,7 +24,7 @@ export class CsvHeaderError extends CsvDatasetError {
 }
 
 function normalizeCell(value: string, additionalMissingTokens: readonly string[]): string | null {
-  if (value.trim() === '') return null;
+  if (value.trim() === '' || ['null', 'n/a'].includes(value.trim().toLowerCase())) return null;
 
   if (additionalMissingTokens.includes(value.trim())) {
     return null;

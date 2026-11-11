@@ -14,16 +14,16 @@ describe('Collection input preflight', () => {
     });
   });
   it('requires a selected file', () => {
-    expect(validateCsvInput(null, options)).toMatch(/chọn/i);
+    expect(validateCsvInput(null, options)).toMatch(/select/i);
   });
   it('rejects empty files and non-csv files', () => {
-    expect(validateCsvInput({ name: 'data.csv', size: 0 }, options)).toMatch(/trống/i);
+    expect(validateCsvInput({ name: 'data.csv', size: 0 }, options)).toMatch(/empty/i);
     expect(validateCsvInput({ name: 'data.xlsx', size: 10 }, options)).toMatch(/csv/i);
   });
   it('allows the exact byte limit and blocks one byte above', () => {
     expect(validateCsvInput({ name: 'dataset.CSV', size: MAX_CSV_BYTES }, options)).toBeNull();
     expect(validateCsvInput({ name: 'dataset.csv', size: MAX_CSV_BYTES + 1 }, options)).toMatch(
-      /vượt/i,
+      /exceeds/i,
     );
   });
   it('allows optional missing tokens from the contract', () => {

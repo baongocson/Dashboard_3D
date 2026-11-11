@@ -78,22 +78,19 @@ export function DatasetTable({
   const visible = filtered.slice(currentPage * safePageSize, (currentPage + 1) * safePageSize);
 
   return (
-    <section className="panel table-panel" aria-label="Bảng dữ liệu">
+    <section className="panel table-panel" aria-label="Data Table">
       <div className="panel-heading">
-        <h2>Bảng dữ liệu</h2>
+        <h2>Data Table</h2>
         <span className="chip">
-          {dataset.rows.length.toLocaleString('vi-VN')} dòng · {dataset.columns.length} cột
+          {dataset.rows.length.toLocaleString('en-US')} rows · {dataset.columns.length} columns
         </span>
       </div>
-      <p className="hint">
-        Chọn một ô để xử lý. Vị trí trên bảng có thể thay đổi; hệ thống dùng rowId/columnId để nhận
-        diện.
-      </p>
+
       <div className="table-tools">
         <label>
-          Cột lọc{' '}
+          Filter Column{' '}
           <select
-            aria-label="Cột lọc bảng"
+            aria-label="Filter Column"
             value={tableView.filters[0]?.columnId ?? ''}
             onChange={(event) => {
               setView({
@@ -104,7 +101,7 @@ export function DatasetTable({
               });
             }}
           >
-            <option value="">Tất cả</option>
+            <option value="">All</option>
             {dataset.columns.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -115,7 +112,7 @@ export function DatasetTable({
         {tableView.filters[0] && (
           <>
             <input
-              aria-label="Giá trị lọc bảng"
+              aria-label="Filter Value"
               value={String(tableView.filters[0].value ?? '')}
               onChange={(event) => {
                 const filter = tableView.filters[0];
@@ -141,14 +138,14 @@ export function DatasetTable({
                     });
                 }}
               />{' '}
-              Chỉ missing
+              Missing Only
             </label>
           </>
         )}
         <label>
-          Sắp xếp{' '}
+          Sort{' '}
           <select
-            aria-label="Sắp xếp bảng"
+            aria-label="Sort Column"
             value={tableView.sorts[0]?.columnId ?? ''}
             onChange={(event) => {
               setView({
@@ -159,7 +156,7 @@ export function DatasetTable({
               });
             }}
           >
-            <option value="">Thứ tự nguồn</option>
+            <option value="">Original Order</option>
             {dataset.columns.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name}
@@ -180,19 +177,19 @@ export function DatasetTable({
                 });
             }}
           >
-            {tableView.sorts[0].direction === 'asc' ? 'Tăng dần' : 'Giảm dần'}
+            {tableView.sorts[0].direction === 'asc' ? 'Ascending' : 'Descending'}
           </button>
         )}
         <span className="hint">
-          {filtered.length.toLocaleString('vi-VN')}/{dataset.rows.length.toLocaleString('vi-VN')}{' '}
-          dòng · Lọc bảng không đổi phạm vi xử lý
+          {filtered.length.toLocaleString('en-US')}/{dataset.rows.length.toLocaleString('en-US')}{' '}
+          rows
         </span>
       </div>
-      <div className="table-scroll" role="region" aria-label="Bảng có thể cuộn ngang" tabIndex={0}>
+      <div className="table-scroll" role="region" aria-label="Scrollable Data Table" tabIndex={0}>
         <table className="dataset-table">
           <thead>
             <tr>
-              <th scope="col">Dòng</th>
+              <th scope="col">Row</th>
               {dataset.columns.map((column) => (
                 <th scope="col" key={column.id}>
                   {column.name}
@@ -226,16 +223,16 @@ export function DatasetTable({
                               columnId: column.id,
                             });
                           }}
-                          aria-label={`Chọn dòng ${String(rowIndex + 1 + currentPage * safePageSize)}, cột ${column.name}: ${value === null ? 'thiếu dữ liệu' : String(value)}`}
+                          aria-label={`Select Row ${String(rowIndex + 1 + currentPage * safePageSize)}, column ${column.name}: ${value === null ? 'missing' : String(value)}`}
                         >
                           {value === null ? (
-                            <span className="missing-tag">Thiếu</span>
+                            <span className="missing-tag">Missing</span>
                           ) : (
                             String(value)
                           )}
                         </button>
                       ) : value === null ? (
-                        <span className="missing-tag">Thiếu</span>
+                        <span className="missing-tag">Missing</span>
                       ) : (
                         String(value)
                       )}
@@ -247,7 +244,7 @@ export function DatasetTable({
           </tbody>
         </table>
       </div>
-      {dataset.rows.length === 0 && <p className="hint">Bộ dữ liệu chưa có dòng dữ liệu.</p>}
+      {dataset.rows.length === 0 && <p className="hint">No rows available.</p>}
       <div className="pagination">
         <button
           type="button"
@@ -257,10 +254,10 @@ export function DatasetTable({
             setPage((value) => Math.max(value - 1, 0));
           }}
         >
-          Trước
+          Previous
         </button>
         <span>
-          Trang {currentPage + 1}/{pageCount}
+          Page {currentPage + 1}/{pageCount}
         </span>
         <button
           type="button"
@@ -270,15 +267,9 @@ export function DatasetTable({
             setPage((value) => Math.min(value + 1, pageCount - 1));
           }}
         >
-          Sau
+          Next
         </button>
       </div>
-      {dataset.rows.length > 2000 && (
-        <p className="hint">
-          Bảng hiện phân trang theo phần dữ liệu đã có trong bộ nhớ; cần tích hợp virtualized table
-          cho CSV rất lớn.
-        </p>
-      )}
     </section>
   );
 }

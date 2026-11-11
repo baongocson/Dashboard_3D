@@ -12,7 +12,7 @@ const envelope = z.discriminatedUnion('type', [
 ]);
 export class HeadersRequiredError extends Error {
   constructor(readonly headers: string[]) {
-    super('Tên cột rỗng hoặc trùng. Kiểm tra và xác nhận tên đề xuất.');
+    super('Empty or duplicate column names. Confirm the proposed names.');
   }
 }
 export function runDataJob<T>(
@@ -30,7 +30,7 @@ export function runDataJob<T>(
     };
     const abort = () => {
       cleanup();
-      reject(new Error('Đã hủy xử lý.'));
+      reject(new Error('Processing cancelled.'));
     };
     if (signal?.aborted) {
       abort();
@@ -39,12 +39,12 @@ export function runDataJob<T>(
     signal?.addEventListener('abort', abort, { once: true });
     worker.onerror = () => {
       cleanup();
-      reject(new Error('Worker gặp lỗi. Dữ liệu hiện tại được giữ nguyên.'));
+      reject(new Error('Processing failed. Current data is unchanged.'));
     };
     worker.onmessage = (event: MessageEvent<unknown>) => {
       try {
         const message = envelope.parse(event.data);
-        if (message.jobId !== jobId) throw new Error('Worker job không khớp.');
+        if (message.jobId !== jobId) throw new Error('Processing job mismatch.');
         if (message.type === 'progress') {
           progress?.(message.percent);
           return;
@@ -55,7 +55,7 @@ export function runDataJob<T>(
         else resolve(validate(message.result));
       } catch (error: unknown) {
         cleanup();
-        reject(error instanceof Error ? error : new Error('Worker trả dữ liệu không hợp lệ.'));
+        reject(error instanceof Error ? error : new Error('Invalid processing result.'));
       }
     };
     worker.postMessage({ ...request, jobId });
